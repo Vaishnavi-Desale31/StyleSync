@@ -1,5 +1,6 @@
 package com.project.stylesync_ai.service;
 
+import com.project.stylesync_ai.exception.ResourceNotFoundException;
 import com.project.stylesync_ai.model.Product;
 import com.project.stylesync_ai.repository.ProductRepository;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class ProductService {
     public Product getProductById(Long id){
         return productRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Product not found with id:" + id));
+                        new ResourceNotFoundException("Product not found with id:" + id));
 
     }
 

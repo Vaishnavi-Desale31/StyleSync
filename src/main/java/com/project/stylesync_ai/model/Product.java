@@ -1,6 +1,10 @@
 
 package com.project.stylesync_ai.model;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -11,12 +15,14 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Product name is required")
     @Column(nullable = false)
     private String name;
 
     @Column(length = 1000)
     private String description;
 
+    @PositiveOrZero(message = "Price cannot be negative")
     private Double price;
 
     private String brand;

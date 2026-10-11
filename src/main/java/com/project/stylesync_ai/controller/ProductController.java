@@ -6,7 +6,7 @@ import com.project.stylesync_ai.service.ProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import javax.naming.ldap.PagedResultsControl;
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -22,7 +22,7 @@ public class ProductController {
     // Create a product
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Product createProduct(@RequestBody Product product){
+    public Product createProduct(@Valid @RequestBody Product product){
         return productService.createProduct(product);
     }
 
@@ -41,7 +41,7 @@ public class ProductController {
     // Update a product
     @PutMapping("/{id}")
     public Product updateProduct(@PathVariable Long id,
-                                 @RequestBody Product product){
+                                 @Valid @RequestBody Product product){
         return productService.updateProduct(id, product);
     }
 
