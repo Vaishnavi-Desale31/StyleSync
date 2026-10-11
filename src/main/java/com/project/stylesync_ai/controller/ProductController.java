@@ -1,5 +1,6 @@
 package com.project.stylesync_ai.controller;
 
+import com.project.stylesync_ai.dto.ProductRequest;
 import com.project.stylesync_ai.model.Product;
 import com.project.stylesync_ai.service.ProductService;
 
@@ -22,8 +23,8 @@ public class ProductController {
     // Create a product
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Product createProduct(@Valid @RequestBody Product product){
-        return productService.createProduct(product);
+    public Product createProduct(@Valid @RequestBody ProductRequest request){
+        return productService.createProduct(request);
     }
 
     // Get all products
@@ -41,8 +42,8 @@ public class ProductController {
     // Update a product
     @PutMapping("/{id}")
     public Product updateProduct(@PathVariable Long id,
-                                 @Valid @RequestBody Product product){
-        return productService.updateProduct(id, product);
+                                 @Valid @RequestBody ProductRequest request){
+        return productService.updateProduct(id, request);
     }
 
     // Delete a product
@@ -56,5 +57,12 @@ public class ProductController {
 @GetMapping("/search")
     public List<Product> searchProducts(@RequestParam String name){
         return productService.searchProductsByName(name);
-}
+    }
+
+    //Get products by category ID
+    @GetMapping("/category/{categoryId}")
+    public List<Product> getProductsByCategoryId(
+            @PathVariable Long categoryId){
+        return productService.getProductsByCategoryId(categoryId);
+    }
 }

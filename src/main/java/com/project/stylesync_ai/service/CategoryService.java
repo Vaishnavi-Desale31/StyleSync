@@ -1,6 +1,7 @@
 package com.project.stylesync_ai.service;
 
-
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import com.project.stylesync_ai.exception.ResourceNotFoundException;
 import com.project.stylesync_ai.model.Category;
 import com.project.stylesync_ai.repository.CategoryRepository;
@@ -17,6 +18,13 @@ public class CategoryService {
     }
 
     public Category createCategory(Category category){
+        if(categoryRepository.findByNameIgnoreCase(category.getName())
+                .isPresent()){
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Category name already exists"
+            );
+        }
         return categoryRepository.save(category);
     }
 
@@ -34,6 +42,15 @@ public class CategoryService {
 
     public Category updateCategory(Long id, Category updateCategory){
         Category existingCategory = getCategoryById(id);
+
+        if(categoryRepository.findByNameIgnoreCase(updateCategory.getName())
+                .filter(category -> !category.getId().equals(id))
+                .isPresent()){
+            throw  new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Category name already exists"
+            );
+        }
 
         existingCategory.setName(updateCategory.getName());
 

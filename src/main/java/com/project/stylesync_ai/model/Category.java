@@ -1,6 +1,9 @@
+
 package com.project.stylesync_ai.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(
@@ -15,16 +18,16 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false,
-    unique = true)
+    @NotBlank(message = "Category name is required")
+    @Size(max = 100, message = "Category name cannot exceed 100 characters")
+    @Column(nullable = false, unique = true, length = 100)
     private String name;
 
-    public Category(){
-
+    public Category() {
     }
 
-    public Category(String name){
-       this.name = name;
+    public Category(String name) {
+        this.name = name;
     }
 
     public Long getId() {

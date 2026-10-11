@@ -33,6 +33,11 @@ public class Product {
 
     private String color;
 
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
+
     // Default constructor required by JPA
     public Product() {
     }
@@ -40,7 +45,7 @@ public class Product {
     // Constructor for creating a product
     public Product(String name, String description, Double price,
                    String brand, String imageUrl, String size,
-                   String color) {
+                   String color, Category category) {
         this.name = name;
         this.description = description;
         this.price = price;
@@ -48,6 +53,7 @@ public class Product {
         this.imageUrl = imageUrl;
         this.size = size;
         this.color = color;
+        this.category = category;
     }
 
     // Getters and setters
@@ -110,6 +116,14 @@ public class Product {
 
     public void setColor(String color) {
         this.color = color;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 }
 
