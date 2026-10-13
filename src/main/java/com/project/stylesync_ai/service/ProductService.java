@@ -2,7 +2,9 @@ package com.project.stylesync_ai.service;
 
 import com.project.stylesync_ai.dto.ProductRequest;
 import com.project.stylesync_ai.exception.ResourceNotFoundException;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import com.project.stylesync_ai.model.Category;
 import com.project.stylesync_ai.model.Product;
 import com.project.stylesync_ai.repository.CategoryRepository;
@@ -51,6 +53,19 @@ public class ProductService {
     //Get all products
     public List<Product> getAllProducts(){
         return productRepository.findAll();
+    }
+
+    //Get product with pagination
+    public Page<Product> getProductsWithPagination(Pageable pageable){
+        return productRepository.findAll(pageable);
+    }
+
+    //Get all products sorted by a selected field and direction
+    public List<Product> getProductsSorted(String sortBy, String direction){
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+        return productRepository.findAll(sort);
     }
 
     //Get a product by ID
