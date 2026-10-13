@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+
+import java.nio.ShortBuffer;
 import java.util.List;
 
 @RestController
@@ -72,8 +74,20 @@ public class ProductController {
     @GetMapping("/page")
     public Page<Product> getProductsWithPagination(
            @RequestParam(defaultValue = "0") int page,
-           @RequestParam(defaultValue = "10") int size
-    ){
+           @RequestParam(defaultValue = "10") int size){
+
+        if(page < 0){
+            throw new IllegalArgumentException(
+                    "Page number cannot ne negaive"
+            );
+        }
+
+        if(size < 1 || size > 100){
+            throw new IllegalArgumentException(
+                    "Page size must be between 1 and 100"
+            );
+        }
+
         Pageable pageable = PageRequest.of(page, size);
 
         return productService.getProductsWithPagination(pageable);
@@ -85,6 +99,29 @@ public class ProductController {
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String direction
     ){
-        return productService.getProductsSorted(sortBy, direction);
+
+        //Validate the sorting field
+        List<String> allowedFields = List.of(
+                "name",
+                "price",
+                "id"
+        );
+
+        if(!allowedFields.contains(sortBy)){
+            throw new IllegalArgumentException(
+                    "Invalid sort field. Allowed fields : name, price, id"
+            );
+        }
+
+        //Validate the sorting direction
+        if(!direction.equalsIgnoreCase("asc")
+        && !direction.equalsIgnoreCase("desc")){
+            throw new IllegalArgumentException(
+                    "Invalid sort direction. Use asc or desc"
+            );
+        }
+        return productService.getProductsSorted(
+                sortBy,
+                direction.toLowerCase());
     }
 }
