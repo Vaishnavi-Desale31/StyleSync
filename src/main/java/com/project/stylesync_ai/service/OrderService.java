@@ -1,4 +1,80 @@
 package com.project.stylesync_ai.service;
 
+import com.project.stylesync_ai.model.Cart;
+import com.project.stylesync_ai.model.CartItem;
+import com.project.stylesync_ai.model.Order;
+import com.project.stylesync_ai.model.OrderItem;
+import com.project.stylesync_ai.repository.CartRepository;
+import com.project.stylesync_ai.repository.OrderRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
 public class OrderService {
+    private OrderRepository orderRepository;
+    private CartRepository cartRepository;
+
+    public OrderService(OrderRepository orderRepository, CartRepository cartRepository){
+        this.orderRepository = orderRepository;
+        this.cartRepository = cartRepository;
+    }
+
+    @Transactional
+    public Order createOrderFromCart(Long cartId){
+
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                        "Cart not found"
+        ));
+
+        if(cart.getItems() == null || cart.getItems().isEmpty()){
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Cannot create an order from an empty cart"
+            );
+        }
+
+        Order order = new Order();
+        order.setOrderDate(LocalDateTime.now());
+        order.setStatus("PLACED");
+
+        double totalAmount = 0.0;
+        List<OrderItem> orderItems = new ArrayList<>();
+
+        for(CartItem cartItem : cart.getItems()){
+
+            OrderItem orderItem = new OrderItem();
+
+            orderItem.setProductId(cartItem.getProduct().getId());
+            orderItem.setProductName(cartItem.getProduct().getName());
+            orderItem.setQuantity(cartItem.getQuantity());
+            orderItem.setPrice(cartItem.getProduct().getPrice());
+            orderItem.setOrder(order);
+
+            totalAmount += orderItem.getPrice()
+                    * cartItem.getQuantity();
+
+            orderItems.add(orderItem);
+        }
+
+        order.setTotalAmount(totalAmount);
+        order.setItems(orderItems);
+
+        return orderRepository.save(order);
+    }
+
+    public Order getOrderById(Long orderId){
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Order not found"
+                ));
+    }
 }
