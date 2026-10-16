@@ -1,6 +1,7 @@
 package com.project.stylesync_ai.service;
 
 import com.project.stylesync_ai.model.Cart;
+import com.project.stylesync_ai.model.Product;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
@@ -13,9 +14,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CartServiceTest {
@@ -90,6 +91,31 @@ class CartServiceTest {
 
         assertEquals(404, exception.getStatusCode().value());
         assertEquals("Product not found", exception.getReason());
+    }
+
+    @Test
+    void addProduct_shouldAddProductToCartSuccessfully() {
+        Cart cart = new Cart();
+
+        Product product = mock(Product.class);
+
+
+        when(cartRepository.findById(2L))
+                .thenReturn(Optional.of(cart));
+
+        when(productRepository.findById(2L))
+                .thenReturn(Optional.of(product));
+
+        when(cartRepository.save(any(Cart.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Cart result = cartService.addProduct(2L, 2L, 1);
+
+        assertEquals(1, result.getItems().size());
+        assertSame(product, result.getItems().get(0).getProduct());
+        assertEquals(1, result.getItems().get(0).getQuantity());
+
+        verify(cartRepository).save(cart);
     }
 
 }
