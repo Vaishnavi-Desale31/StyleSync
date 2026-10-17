@@ -116,4 +116,10 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
+    @Transactional
+    public Cart clearCart(Long cartId){
+        Cart cart  = getCartById(cartId);
+        cart.clearItems();
+        return cartRepository.save(cart);
+    }
 }

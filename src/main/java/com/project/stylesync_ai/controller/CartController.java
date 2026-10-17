@@ -59,4 +59,9 @@ public class CartController {
 
         return cartService.removeProduct(cartId, productId);
     }
+
+    @DeleteMapping("/{cartId}/items")
+    public Cart clearCart(@PathVariable Long cartId){
+        return cartService.clearCart(cartId);
+    }
 }

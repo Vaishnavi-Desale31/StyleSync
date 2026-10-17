@@ -1,6 +1,5 @@
 package com.project.stylesync_ai.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -46,5 +45,11 @@ public class Cart {
     public void removeItem(CartItem item){
         items.remove(item);
         item.setCart(null);
+    }
+
+    public void clearItems(){
+        for(CartItem item : new ArrayList<>(items)){
+            removeItem(item);
+        }
     }
 }

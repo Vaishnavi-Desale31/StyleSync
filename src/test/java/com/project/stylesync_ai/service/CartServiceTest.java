@@ -1,6 +1,7 @@
 package com.project.stylesync_ai.service;
 
 import com.project.stylesync_ai.model.Cart;
+import com.project.stylesync_ai.model.CartItem;
 import com.project.stylesync_ai.model.Product;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.ProductRepository;
@@ -118,4 +119,34 @@ class CartServiceTest {
         verify(cartRepository).save(cart);
     }
 
+    @Test
+    void clearCart_shouldRemoveAllItems(){
+        Cart cart = new Cart();
+
+        CartItem item1 = new CartItem();
+        item1.setQuantity(2);
+
+        CartItem item2 = new CartItem();
+        item2.setQuantity(1);
+
+        cart.addItem(item1);
+        cart.addItem(item2);
+
+        assertEquals(2, cart.getItems().size());
+
+        when(cartRepository.findById(2L))
+                .thenReturn(Optional.of(cart));
+
+        when(cartRepository.save(any(Cart.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Cart result = cartService.clearCart(2L);
+
+        assertTrue(result.getItems().isEmpty());
+
+        assertNull(item1.getCart());
+        assertNull(item2.getCart());
+
+        verify(cartRepository).save(cart);
+    }
 }
