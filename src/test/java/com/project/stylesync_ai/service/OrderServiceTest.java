@@ -140,4 +140,41 @@ class OrderServiceTest {
 
         assertEquals(404, exception.getStatusCode().value());
     }
+
+    @Test
+    void createOrderFromCart_shouldCalculateTotalForMultipleProducts(){
+        Cart cart = mock(Cart.class);
+        CartItem tshirtItem = mock(CartItem.class);
+        CartItem jeansItem = mock(CartItem.class);
+
+        Product tshirt = mock(Product.class);
+        Product jeans = mock(Product.class);
+
+        when(cartRepository.findById(3L))
+                .thenReturn(Optional.of(cart));
+        when(cart.getItems())
+                .thenReturn(List.of(tshirtItem, jeansItem));
+
+        when(tshirtItem.getProduct()).thenReturn(tshirt);
+        when(tshirtItem.getQuantity()).thenReturn(2);
+        when(tshirt.getId()).thenReturn(2L);
+        when(tshirt.getName()).thenReturn("Premium Black T-Shirt");
+        when(tshirt.getPrice()).thenReturn(799.0);
+
+        when(jeansItem.getProduct()).thenReturn(jeans);
+        when(jeansItem.getQuantity()).thenReturn(1);
+        when(jeans.getId()).thenReturn(3L);
+        when(jeans.getName()).thenReturn("Jeans");
+        when(jeans.getPrice()).thenReturn(1299.0);
+
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Order result = orderService.createOrderFromCart(3L);
+
+        assertEquals(2897.0, result.getTotalAmount(), 0.001);
+        assertEquals(2,result.getItems().size());
+
+        verify(orderRepository).save(any(Order.class));
+    }
 }
