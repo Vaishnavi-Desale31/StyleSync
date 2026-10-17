@@ -10,7 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.expression.spel.ast.OpInc;
+
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
@@ -148,5 +148,20 @@ class CartServiceTest {
         assertNull(item2.getCart());
 
         verify(cartRepository).save(cart);
+    }
+
+    @Test
+    void updateQuantity_shouldRejectZeroQuantity(){
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> cartService.updateQuantity(2L,2L,0)
+        );
+
+        assertEquals(400,exception.getStatusCode().value());
+        assertEquals(
+                "Quantity must be greater than zero",
+                exception.getReason()
+        );
     }
 }
