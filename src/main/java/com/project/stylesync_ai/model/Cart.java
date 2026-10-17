@@ -52,4 +52,12 @@ public class Cart {
             removeItem(item);
         }
     }
+
+    public Double getTotalPrice(){
+        return items.stream()
+                .mapToDouble(item ->
+                        item.getProduct().getPrice() * item.getQuantity()
+                )
+                .sum();
+    }
 }
