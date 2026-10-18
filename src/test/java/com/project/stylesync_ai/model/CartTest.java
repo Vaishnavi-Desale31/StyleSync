@@ -74,4 +74,26 @@ public class CartTest {
         assertNull(item1.getCart());
         assertNull(item2.getCart());
     }
+
+    @Test
+    void getTotalPrice_shouldUpdateWhenQuantityChanges(){
+        //Arrange: add one product with quantity 1
+        Product product = new Product();
+        product.setPrice(799.0);
+
+        CartItem item = new CartItem();
+        item.setProduct(product);
+        item.setQuantity(1);
+
+        Cart cart = new Cart();
+        cart.addItem(item);
+
+        assertEquals(799.0,cart.getTotalPrice(),0.001);
+
+        //Act: increase the quantity to 3
+        item.setQuantity(3);
+
+        //Asset: total price should become 2397
+        assertEquals(2397.0,cart.getTotalPrice(),0.001);
+    }
 }
