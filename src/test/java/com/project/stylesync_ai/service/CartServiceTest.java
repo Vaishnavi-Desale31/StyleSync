@@ -164,4 +164,171 @@ class CartServiceTest {
                 exception.getReason()
         );
     }
+
+    @Test
+    void createCart_shouldSaveAndReturnCart(){
+        //Arrange: return the same cart that is saved
+        when(cartRepository.save(any(Cart.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        //Act:create a cart
+        Cart result = cartService.createCart();
+
+        //Assert:cart is returned and save
+        assertNotNull(result);
+        assertTrue(result.getItems().isEmpty());
+        verify(cartRepository).save(result);
+    }
+
+    @Test
+    void getCartById_shouldReturnCartWhenItExists(){
+        //Arrange: prepare an existing cart
+        Cart cart = new Cart();
+        when(cartRepository.findById(2L))
+                .thenReturn(Optional.of(cart));
+
+        //Act: retrieve the cart
+        Cart result = cartService.getCartById(2L);
+
+        //Assert: the same cart is returned
+        assertSame(cart, result);
+        verify(cartRepository).findById(2L);
+
+    }
+
+    @Test
+    void addProduct_shouldIncrementQuantityWhenProductAlreadyExists(){
+        //Arrange: cart already contains two units of this product
+        Cart cart = new Cart();
+        Product product = mock(Product.class);
+        when(product.getId())
+                .thenReturn(2L);
+
+        CartItem existingItem = new CartItem();
+        existingItem.setProduct(product);
+        existingItem.setQuantity(2);
+        cart.addItem(existingItem);
+
+        when(cartRepository.findById(2L))
+                .thenReturn(Optional.of(cart));
+        when(productRepository.findById(2L))
+                .thenReturn(Optional.of(product));
+        when(cartRepository.save(any(Cart.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        //Act: add three more units
+        Cart result = cartService.addProduct(2L,2L,3);
+
+        //Assert: quantity becomes five, not two separate items
+        assertEquals(1, result.getItems().size());
+        assertEquals(5,result.getItems().get(0).getQuantity());
+        verify(cartRepository).save(cart);
+    }
+
+    @Test
+    void updateQuantity_shouldUpdateExistingProductQuantity(){
+        //Arrange: add a product wih quantity two
+        Cart cart = new Cart();
+        Product product = mock(Product.class);
+        when(product.getId())
+                .thenReturn(2L);
+
+        CartItem item = new CartItem();
+        item.setProduct(product);
+        item.setQuantity(2);
+        cart.addItem(item);
+
+        when(cartRepository.findById(2L))
+                .thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        //Act : set quantity to four
+        Cart result = cartService.updateQuantity(2L,2L,4);
+
+        //Assert: quantity is replaced to four
+        assertEquals(4, result.getItems().get(0).getQuantity());
+        verify(cartRepository).save(cart);
+    }
+
+    @Test
+    void updateQuantity_shouldFailWhenProductIsNotInCart() {
+        // Arrange: cart exists but contains no items
+        Cart cart = new Cart();
+        when(cartRepository.findById(2L))
+                .thenReturn(Optional.of(cart));
+
+        // Act: try to update a product that is not in the cart
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> cartService.updateQuantity(2L, 99L, 3)
+        );
+
+        // Assert: service returns a not-found error
+        assertEquals(404, exception.getStatusCode().value());
+        assertEquals("Product not found in cart", exception.getReason());
+        verify(cartRepository, never()).save(any(Cart.class));
+    }
+
+    @Test
+    void removeProduct_shouldRemoveExistingProduct() {
+        // Arrange: cart contains one product
+        Cart cart = new Cart();
+        Product product = mock(Product.class);
+        when(product.getId()).thenReturn(2L);
+
+        CartItem item = new CartItem();
+        item.setProduct(product);
+        item.setQuantity(1);
+        cart.addItem(item);
+
+        when(cartRepository.findById(2L))
+                .thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act: remove the product
+        Cart result = cartService.removeProduct(2L, 2L);
+
+        // Assert: cart is empty and relationship is removed
+        assertTrue(result.getItems().isEmpty());
+        assertNull(item.getCart());
+        verify(cartRepository).save(cart);
+    }
+
+    @Test
+    void removeProduct_shouldFailWhenProductIsNotInCart() {
+        // Arrange: cart exists but is empty
+        Cart cart = new Cart();
+        when(cartRepository.findById(2L))
+                .thenReturn(Optional.of(cart));
+
+        // Act: try to remove a missing product
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> cartService.removeProduct(2L, 99L)
+        );
+
+        // Assert: not-found error is returned
+        assertEquals(404, exception.getStatusCode().value());
+        assertEquals("Product not found in cart", exception.getReason());
+        verify(cartRepository, never()).save(any(Cart.class));
+    }
+
+    @Test
+    void clearCart_shouldFailWhenCartDoesNotExist() {
+        // Arrange: requested cart is missing
+        when(cartRepository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        // Act: try to clear the missing cart
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> cartService.clearCart(99L)
+        );
+
+        // Assert: not-found error is returned
+        assertEquals(404, exception.getStatusCode().value());
+        assertEquals("Cart not found", exception.getReason());
+        verify(cartRepository, never()).save(any(Cart.class));
+    }
 }
