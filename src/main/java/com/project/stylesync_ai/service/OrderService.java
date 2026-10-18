@@ -64,10 +64,15 @@ public class OrderService {
             orderItems.add(orderItem);
         }
 
-        order.setTotalAmount(totalAmount);
+       order.setTotalAmount(totalAmount);
         order.setItems(orderItems);
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        cart.clearItems();
+        cartRepository.save(cart);
+
+        return savedOrder;
     }
 
     public Order getOrderById(Long orderId){

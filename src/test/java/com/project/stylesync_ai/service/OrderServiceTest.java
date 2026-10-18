@@ -177,4 +177,40 @@ class OrderServiceTest {
 
         verify(orderRepository).save(any(Order.class));
     }
+
+
+    @Test
+    void createOrderFromCart_shouldClearCartAfterSuccessfulOrder() {
+        // Arrange: create a cart with one product
+        Cart cart = mock(Cart.class);
+        CartItem cartItem = mock(CartItem.class);
+        Product product = mock(Product.class);
+
+        when(cartRepository.findById(3L))
+                .thenReturn(Optional.of(cart));
+
+        when(cart.getItems())
+                .thenReturn(List.of(cartItem));
+
+        when(cartItem.getProduct()).thenReturn(product);
+        when(cartItem.getQuantity()).thenReturn(1);
+
+        when(product.getId()).thenReturn(2L);
+        when(product.getName()).thenReturn("T-Shirt");
+        when(product.getPrice()).thenReturn(799.0);
+
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act: create an order
+        Order result = orderService.createOrderFromCart(3L);
+
+        // Assert: order is saved and cart is cleared
+        assertNotNull(result);
+
+        verify(orderRepository).save(any(Order.class));
+        verify(cart).clearItems();
+        verify(cartRepository).save(cart);
+    }
+
 }
