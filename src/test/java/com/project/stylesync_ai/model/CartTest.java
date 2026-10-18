@@ -2,7 +2,7 @@ package com.project.stylesync_ai.model;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CartTest {
 
@@ -53,5 +53,25 @@ public class CartTest {
 
         assertEquals(799.0,cart.getTotalPrice(),0.001);
 
+    }
+
+    @Test
+    void clearItems_shouldRemoveAllItemsAndDisconnectCart(){
+        //Arrange :create a cart and two cart items
+        Cart cart = new Cart();
+
+        CartItem item1 = new CartItem();
+        CartItem item2 = new CartItem();
+
+        cart.addItem(item1);
+        cart.addItem(item2);
+
+        //Act: clear all items
+        cart.clearItems();
+
+        //Assert: cart is empty and items are disconnected
+        assertTrue(cart.getItems().isEmpty());
+        assertNull(item1.getCart());
+        assertNull(item2.getCart());
     }
 }
