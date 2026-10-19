@@ -20,7 +20,7 @@ public class OrderItem {
     private Double price;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id, nullable = false")
+    @JoinColumn(name = "order_id", nullable = false)
     @JsonIgnore
     private Order order;
 
