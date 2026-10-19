@@ -213,4 +213,102 @@ class OrderServiceTest {
         verify(cartRepository).save(cart);
     }
 
+
+    @Test
+    void createOrderFromCart_shouldRejectNullItems() {
+        // Arrange: cart exists but its items list is null
+        Cart cart = mock(Cart.class);
+
+        when(cartRepository.findById(3L))
+                .thenReturn(Optional.of(cart));
+        when(cart.getItems()).thenReturn(null);
+
+        // Act and assert: checkout must be rejected
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.createOrderFromCart(3L)
+        );
+
+        assertEquals(400, exception.getStatusCode().value());
+        assertEquals(
+                "Cannot create an order from an empty cart",
+                exception.getReason()
+        );
+
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    @Test
+    void createOrderFromCart_shouldSaveCartAfterClearingIt() {
+        // Arrange: prepare a cart with one product
+        Cart cart = mock(Cart.class);
+        CartItem cartItem = mock(CartItem.class);
+        Product product = mock(Product.class);
+
+        when(cartRepository.findById(3L))
+                .thenReturn(Optional.of(cart));
+        when(cart.getItems()).thenReturn(List.of(cartItem));
+        when(cartItem.getProduct()).thenReturn(product);
+        when(cartItem.getQuantity()).thenReturn(1);
+        when(product.getId()).thenReturn(2L);
+        when(product.getName()).thenReturn("T-Shirt");
+        when(product.getPrice()).thenReturn(799.0);
+
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act: place the order
+        orderService.createOrderFromCart(3L);
+
+        // Assert: save the order before saving the cleared cart
+        var orderOrder = inOrder(orderRepository, cart, cartRepository);
+        orderOrder.verify(orderRepository).save(any(Order.class));
+        orderOrder.verify(cart).clearItems();
+        orderOrder.verify(cartRepository).save(cart);
+    }
+
+    @Test
+    void getOrderById_shouldThrowNotFoundWhenOrderIsMissing() {
+        // Arrange: order does not exist
+        when(orderRepository.findById(999L))
+                .thenReturn(Optional.empty());
+
+        // Act and assert
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.getOrderById(999L)
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+        assertEquals("Order not found", exception.getReason());
+    }
+
+    @Test
+    void createOrderFromCart_shouldStoreProductPriceSnapshot() {
+        // Arrange: product price at checkout is 799
+        Cart cart = mock(Cart.class);
+        CartItem cartItem = mock(CartItem.class);
+        Product product = mock(Product.class);
+
+        when(cartRepository.findById(3L))
+                .thenReturn(Optional.of(cart));
+        when(cart.getItems()).thenReturn(List.of(cartItem));
+        when(cartItem.getProduct()).thenReturn(product);
+        when(cartItem.getQuantity()).thenReturn(2);
+        when(product.getId()).thenReturn(2L);
+        when(product.getName()).thenReturn("T-Shirt");
+        when(product.getPrice()).thenReturn(799.0);
+
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act: create the order
+        Order result = orderService.createOrderFromCart(3L);
+
+        // Assert: order retains the checkout price
+        assertEquals(799.0, result.getItems().get(0).getPrice(), 0.001);
+        assertEquals(1598.0, result.getTotalAmount(), 0.001);
+    }
+
+
 }
