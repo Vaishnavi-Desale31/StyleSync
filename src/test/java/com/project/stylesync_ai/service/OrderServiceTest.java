@@ -355,4 +355,39 @@ class OrderServiceTest {
         assertEquals(404, exception.getStatusCode().value());
         assertEquals("Order not found", exception.getReason());
     }
+
+    // 13. All existing orders are returned
+    @Test
+    void getAllOrders_shouldReturnAllOrders() {
+
+        Order order1 = new Order();
+        Order order2 = new Order();
+
+        when(orderRepository.findAll())
+                .thenReturn(List.of(order1, order2));
+
+        List<Order> result = orderService.getAllOrders();
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertSame(order1, result.get(0));
+        assertSame(order2, result.get(1));
+
+        verify(orderRepository).findAll();
+    }
+
+    // 14. Empty list is returned when no orders exist
+    @Test
+    void getAllOrders_shouldReturnEmptyListWhenNoOrdersExist() {
+
+        when(orderRepository.findAll())
+                .thenReturn(List.of());
+
+        List<Order> result = orderService.getAllOrders();
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        verify(orderRepository).findAll();
+    }
 }

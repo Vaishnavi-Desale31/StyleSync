@@ -1,5 +1,4 @@
-
-package com.project.stylesync_ai.security;
+ package com.project.stylesync_ai.security;
 
 import com.project.stylesync_ai.config.JwtConfig;
 import io.jsonwebtoken.JwtException;
@@ -39,6 +38,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authorization = request.getHeader("Authorization");
+        System.out.println(
+                "Request: " + request.getMethod() + " "
+                        + request.getRequestURI());
 
         if (authorization == null
                 || !authorization.startsWith("Bearer ")) {
@@ -46,10 +48,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = authorization.substring(7);
+        String token = authorization.substring(7).trim();
 
         try {
             String email = jwtConfig.extractUsername(token);
+
+            System.out.println(
+                    "JWT signature accepted; subject: " + email);
 
             if (email != null
                     && SecurityContextHolder.getContext()
@@ -59,6 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         userDetailsService.loadUserByUsername(email);
 
                 if (jwtConfig.isTokenValid(token, userDetails)) {
+
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,
@@ -71,11 +77,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     SecurityContextHolder.getContext()
                             .setAuthentication(authentication);
+
+                    System.out.println(
+                            "JWT authentication successful for: " + email);
+                } else {
+                    System.out.println(
+                            "JWT signature accepted, but token validation failed.");
                 }
             }
 
-        } catch (JwtException | IllegalArgumentException
+        } catch (JwtException
+                 | IllegalArgumentException
                  | UsernameNotFoundException exception) {
+
+            System.out.println(
+                    "JWT validation failed: "
+                            + exception.getClass().getSimpleName()
+                            + " - " + exception.getMessage());
+
             SecurityContextHolder.clearContext();
         }
 

@@ -82,4 +82,8 @@ public class OrderService {
                         "Order not found"
                 ));
     }
+
+    public List<Order> getAllOrders() {
+        return orderRepository.findAll();
+    }
 }
