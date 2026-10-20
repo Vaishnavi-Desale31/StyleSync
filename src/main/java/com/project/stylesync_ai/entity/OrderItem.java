@@ -1,4 +1,4 @@
-package com.project.stylesync_ai.model;
+package com.project.stylesync_ai.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

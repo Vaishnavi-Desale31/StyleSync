@@ -1,7 +1,7 @@
 package com.project.stylesync_ai.controller;
 
 
-import com.project.stylesync_ai.model.Order;
+import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;

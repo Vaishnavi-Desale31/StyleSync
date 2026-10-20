@@ -2,7 +2,7 @@
 package com.project.stylesync_ai.controller;
 
 import com.project.stylesync_ai.dto.AddToCartRequest;
-import com.project.stylesync_ai.model.Cart;
+import com.project.stylesync_ai.entity.Cart;
 import com.project.stylesync_ai.service.CartService;
 
 import org.springframework.http.HttpStatus;

@@ -1,7 +1,7 @@
 package com.project.stylesync_ai.controller;
 
 import com.project.stylesync_ai.dto.ProductRequest;
-import com.project.stylesync_ai.model.Product;
+import com.project.stylesync_ai.entity.Product;
 import com.project.stylesync_ai.service.ProductService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -77,7 +77,7 @@ public class ProductController {
 
         if(page < 0){
             throw new IllegalArgumentException(
-                    "Page number cannot ne negaive"
+                    "Page number cannot be negative"
             );
         }
 

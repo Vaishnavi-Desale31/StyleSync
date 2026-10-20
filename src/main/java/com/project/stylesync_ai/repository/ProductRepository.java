@@ -1,7 +1,7 @@
 
 package com.project.stylesync_ai.repository;
 
-import com.project.stylesync_ai.model.Product;
+import com.project.stylesync_ai.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -1,8 +1,8 @@
 package com.project.stylesync_ai;
 
-import com.project.stylesync_ai.model.Cart;
-import com.project.stylesync_ai.model.CartItem;
-import com.project.stylesync_ai.model.Product;
+import com.project.stylesync_ai.entity.Cart;
+import com.project.stylesync_ai.entity.CartItem;
+import com.project.stylesync_ai.entity.Product;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.OrderRepository;
 import com.project.stylesync_ai.repository.ProductRepository;

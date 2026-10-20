@@ -1,6 +1,6 @@
 package com.project.stylesync_ai.repository;
 
-import com.project.stylesync_ai.model.Category;
+import com.project.stylesync_ai.entity.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

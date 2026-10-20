@@ -3,7 +3,7 @@ package com.project.stylesync_ai.service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import com.project.stylesync_ai.exception.ResourceNotFoundException;
-import com.project.stylesync_ai.model.Category;
+import com.project.stylesync_ai.entity.Category;
 import com.project.stylesync_ai.repository.CategoryRepository;
 import org.springframework.stereotype.Service;
 

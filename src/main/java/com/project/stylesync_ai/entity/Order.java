@@ -1,7 +1,6 @@
 
-package com.project.stylesync_ai.model;
+package com.project.stylesync_ai.entity;
 
-import com.project.stylesync_ai.model.OrderItem;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;

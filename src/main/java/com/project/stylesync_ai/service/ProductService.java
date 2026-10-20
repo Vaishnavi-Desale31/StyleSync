@@ -5,14 +5,13 @@ import com.project.stylesync_ai.exception.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import com.project.stylesync_ai.model.Category;
-import com.project.stylesync_ai.model.Product;
+import com.project.stylesync_ai.entity.Category;
+import com.project.stylesync_ai.entity.Product;
 import com.project.stylesync_ai.repository.CategoryRepository;
 import com.project.stylesync_ai.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ProductService {

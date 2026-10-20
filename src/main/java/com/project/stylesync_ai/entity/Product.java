@@ -1,5 +1,5 @@
 
-package com.project.stylesync_ai.model;
+package com.project.stylesync_ai.entity;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;

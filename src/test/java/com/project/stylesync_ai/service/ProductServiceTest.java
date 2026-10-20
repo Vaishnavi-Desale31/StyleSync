@@ -3,7 +3,7 @@ package com.project.stylesync_ai.service;
 
 import com.project.stylesync_ai.dto.ProductRequest;
 import com.project.stylesync_ai.exception.ResourceNotFoundException;
-import com.project.stylesync_ai.model.Product;
+import com.project.stylesync_ai.entity.Product;
 import com.project.stylesync_ai.repository.CategoryRepository;
 import com.project.stylesync_ai.repository.ProductRepository;
 import org.junit.jupiter.api.Test;

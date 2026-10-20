@@ -1,4 +1,8 @@
 package com.project.stylesync_ai.dto;
 
-public class AuthResponse {
+public record AuthResponse(
+        String accessToken,
+        String tokenType,
+        long expiresInMs
+) {
 }

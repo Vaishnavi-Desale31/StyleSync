@@ -1,7 +1,6 @@
 package com.project.stylesync_ai.controller;
 
-import ch.qos.logback.core.pattern.util.RegularEscapeUtil;
-import com.project.stylesync_ai.model.Category;
+import com.project.stylesync_ai.entity.Category;
 import com.project.stylesync_ai.service.CategoryService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
