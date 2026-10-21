@@ -20,15 +20,16 @@ public class OrderService {
     private OrderRepository orderRepository;
     private CartRepository cartRepository;
 
-    public OrderService(OrderRepository orderRepository, CartRepository cartRepository){
+    public OrderService(OrderRepository orderRepository,
+                        CartRepository cartRepository){
         this.orderRepository = orderRepository;
         this.cartRepository = cartRepository;
     }
 
     @Transactional
-    public Order createOrderFromCart(Long cartId){
+    public Order createOrderFromCart(Long cartId, String email){
 
-        Cart cart = cartRepository.findById(cartId)
+        Cart cart = cartRepository.findByIdAndUser_Email(cartId, email)
                 .orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND,
                         "Cart not found"
@@ -42,6 +43,7 @@ public class OrderService {
         }
 
         Order order = new Order();
+        order.setUser(cart.getUser());
         order.setOrderDate(LocalDateTime.now());
         order.setStatus("PLACED");
 
@@ -49,10 +51,10 @@ public class OrderService {
         List<OrderItem> orderItems = new ArrayList<>();
 
         for(CartItem cartItem : cart.getItems()){
-
             OrderItem orderItem = new OrderItem();
 
             orderItem.setProductId(cartItem.getProduct().getId());
+
             orderItem.setProductName(cartItem.getProduct().getName());
             orderItem.setQuantity(cartItem.getQuantity());
             orderItem.setPrice(cartItem.getProduct().getPrice());
@@ -75,15 +77,17 @@ public class OrderService {
         return savedOrder;
     }
 
-    public Order getOrderById(Long orderId){
-        return orderRepository.findById(orderId)
+    @Transactional(readOnly = true)
+    public Order getOrderById(Long orderId, String email){
+        return orderRepository.findByIdAndUser_Email(orderId, email)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Order not found"
                 ));
     }
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<Order> getAllOrders(String email) {
+        return orderRepository.findAllByUser_Email(email);
     }
 }

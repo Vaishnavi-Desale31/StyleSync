@@ -1,10 +1,10 @@
 package com.project.stylesync_ai.entity;
 
 import jakarta.persistence.*;
-
+import com.project.stylesync_ai.entity.User;
 import java.util.ArrayList;
 import java.util.List;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "carts")
@@ -13,6 +13,11 @@ public class Cart {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @OneToMany(
             mappedBy = "cart",
@@ -35,6 +40,14 @@ public class Cart {
 
     public void setItems(List<CartItem> items){
         this.items = items;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public void addItem(CartItem item){

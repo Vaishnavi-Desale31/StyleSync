@@ -4,6 +4,7 @@ package com.project.stylesync_ai.controller;
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.service.OrderService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,17 +21,25 @@ public class OrderController {
 
     @PostMapping("/from-cart/{cartId}")
     @ResponseStatus(HttpStatus.CREATED)
-    public Order getOrderFromCart(@PathVariable Long cartId){
-        return orderService.createOrderFromCart(cartId);
+    public Order getOrderFromCart(
+            @PathVariable Long cartId,
+            Authentication authentication){
+        return orderService.createOrderFromCart(
+                cartId,
+                authentication.getName());
     }
 
     @GetMapping("/{orderId}")
-    public Order getOrderById(@PathVariable Long orderId){
-        return orderService.getOrderById(orderId);
+    public Order getOrderById(
+            @PathVariable Long orderId,
+            Authentication authentication){
+        return orderService.getOrderById(
+                orderId,
+                authentication.getName());
     }
 
     @GetMapping
-    public List<Order> getAllOrders() {
-        return orderService.getAllOrders();
+    public List<Order> getAllOrders(Authentication authentication) {
+        return orderService.getAllOrders(authentication.getName());
     }
 }

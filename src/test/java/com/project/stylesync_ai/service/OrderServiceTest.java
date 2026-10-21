@@ -5,9 +5,9 @@ import com.project.stylesync_ai.entity.CartItem;
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.entity.OrderItem;
 import com.project.stylesync_ai.entity.Product;
+import com.project.stylesync_ai.entity.User;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.OrderRepository;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +25,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
+    private static final String TEST_EMAIL = "vaishnavi@example.com";
+
     @Mock
     private OrderRepository orderRepository;
 
@@ -34,15 +36,21 @@ class OrderServiceTest {
     @InjectMocks
     private OrderService orderService;
 
+    private User createTestUser() {
+        return new User("Test User", TEST_EMAIL, "encoded-password");
+    }
+
     // 1. Successful checkout with one product
     @Test
     void createOrderFromCart_shouldCreateOrderSuccessfully() {
         Cart cart = mock(Cart.class);
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
+        User user = createTestUser();
 
-        when(cartRepository.findById(3L))
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(user);
         when(cart.getItems()).thenReturn(List.of(cartItem));
         when(cartItem.getProduct()).thenReturn(product);
         when(cartItem.getQuantity()).thenReturn(2);
@@ -54,12 +62,13 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Order result = orderService.createOrderFromCart(3L);
+        Order result = orderService.createOrderFromCart(3L, TEST_EMAIL);
 
         assertNotNull(result);
         assertEquals("PLACED", result.getStatus());
         assertNotNull(result.getOrderDate());
         assertEquals(1598.0, result.getTotalAmount(), 0.001);
+        assertSame(user, result.getUser());
 
         assertEquals(1, result.getItems().size());
 
@@ -71,17 +80,18 @@ class OrderServiceTest {
         assertSame(result, item.getOrder());
 
         verify(orderRepository).save(any(Order.class));
+        verify(cartRepository).save(cart);
     }
 
-    // 2. Checkout fails when the cart does not exist
+    // 2. Checkout fails when the cart does not exist for this user
     @Test
     void createOrderFromCart_shouldFailWhenCartIsMissing() {
-        when(cartRepository.findById(99L))
+        when(cartRepository.findByIdAndUser_Email(99L, TEST_EMAIL))
                 .thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> orderService.createOrderFromCart(99L)
+                () -> orderService.createOrderFromCart(99L, TEST_EMAIL)
         );
 
         assertEquals(404, exception.getStatusCode().value());
@@ -96,13 +106,13 @@ class OrderServiceTest {
     void createOrderFromCart_shouldFailWhenCartIsEmpty() {
         Cart cart = mock(Cart.class);
 
-        when(cartRepository.findById(3L))
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
         when(cart.getItems()).thenReturn(new ArrayList<>());
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> orderService.createOrderFromCart(3L)
+                () -> orderService.createOrderFromCart(3L, TEST_EMAIL)
         );
 
         assertEquals(400, exception.getStatusCode().value());
@@ -121,13 +131,13 @@ class OrderServiceTest {
     void createOrderFromCart_shouldRejectNullItems() {
         Cart cart = mock(Cart.class);
 
-        when(cartRepository.findById(3L))
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
         when(cart.getItems()).thenReturn(null);
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> orderService.createOrderFromCart(3L)
+                () -> orderService.createOrderFromCart(3L, TEST_EMAIL)
         );
 
         assertEquals(400, exception.getStatusCode().value());
@@ -150,8 +160,9 @@ class OrderServiceTest {
         Product tshirt = mock(Product.class);
         Product jeans = mock(Product.class);
 
-        when(cartRepository.findById(3L))
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(createTestUser());
         when(cart.getItems())
                 .thenReturn(List.of(tshirtItem, jeansItem));
 
@@ -170,7 +181,7 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Order result = orderService.createOrderFromCart(3L);
+        Order result = orderService.createOrderFromCart(3L, TEST_EMAIL);
 
         // (2 * 799) + (1 * 1299) = 2897
         assertEquals(2897.0, result.getTotalAmount(), 0.001);
@@ -186,8 +197,9 @@ class OrderServiceTest {
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
 
-        when(cartRepository.findById(3L))
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(createTestUser());
         when(cart.getItems()).thenReturn(List.of(cartItem));
         when(cartItem.getProduct()).thenReturn(product);
         when(cartItem.getQuantity()).thenReturn(1);
@@ -199,7 +211,7 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Order result = orderService.createOrderFromCart(3L);
+        Order result = orderService.createOrderFromCart(3L, TEST_EMAIL);
 
         assertNotNull(result);
         verify(cart).clearItems();
@@ -213,8 +225,9 @@ class OrderServiceTest {
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
 
-        when(cartRepository.findById(3L))
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(createTestUser());
         when(cart.getItems()).thenReturn(List.of(cartItem));
         when(cartItem.getProduct()).thenReturn(product);
         when(cartItem.getQuantity()).thenReturn(1);
@@ -226,7 +239,7 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        orderService.createOrderFromCart(3L);
+        orderService.createOrderFromCart(3L, TEST_EMAIL);
 
         var order = inOrder(orderRepository, cart, cartRepository);
 
@@ -242,8 +255,9 @@ class OrderServiceTest {
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
 
-        when(cartRepository.findById(3L))
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(createTestUser());
         when(cart.getItems()).thenReturn(List.of(cartItem));
         when(cartItem.getProduct()).thenReturn(product);
         when(cartItem.getQuantity()).thenReturn(2);
@@ -255,7 +269,7 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Order result = orderService.createOrderFromCart(3L);
+        Order result = orderService.createOrderFromCart(3L, TEST_EMAIL);
 
         assertEquals(799.0, result.getItems().get(0).getPrice(), 0.001);
         assertEquals(1598.0, result.getTotalAmount(), 0.001);
@@ -268,8 +282,9 @@ class OrderServiceTest {
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
 
-        when(cartRepository.findById(3L))
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(createTestUser());
         when(cart.getItems()).thenReturn(List.of(cartItem));
         when(cartItem.getProduct()).thenReturn(product);
         when(cartItem.getQuantity()).thenReturn(1);
@@ -283,7 +298,7 @@ class OrderServiceTest {
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
-                () -> orderService.createOrderFromCart(3L)
+                () -> orderService.createOrderFromCart(3L, TEST_EMAIL)
         );
 
         assertEquals("Database save failed", exception.getMessage());
@@ -299,8 +314,9 @@ class OrderServiceTest {
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
 
-        when(cartRepository.findById(3L))
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(createTestUser());
         when(cart.getItems()).thenReturn(List.of(cartItem));
         when(cartItem.getProduct()).thenReturn(product);
         when(cartItem.getQuantity()).thenReturn(1);
@@ -317,7 +333,7 @@ class OrderServiceTest {
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
-                () -> orderService.createOrderFromCart(3L)
+                () -> orderService.createOrderFromCart(3L, TEST_EMAIL)
         );
 
         assertEquals("Cart save failed", exception.getMessage());
@@ -327,67 +343,66 @@ class OrderServiceTest {
         verify(cartRepository).save(cart);
     }
 
-    // 11. Existing order is returned by ID
+    // 11. Existing order is returned only for its owner
     @Test
     void getOrderById_shouldReturnOrderWhenItExists() {
         Order expectedOrder = new Order();
 
-        when(orderRepository.findById(3L))
+        when(orderRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(expectedOrder));
 
-        Order result = orderService.getOrderById(3L);
+        Order result = orderService.getOrderById(3L, TEST_EMAIL);
 
         assertSame(expectedOrder, result);
-        verify(orderRepository).findById(3L);
+        verify(orderRepository)
+                .findByIdAndUser_Email(3L, TEST_EMAIL);
     }
 
-    // 12. Missing order returns a 404 exception
+    // 12. Missing or unowned order returns a 404 exception
     @Test
     void getOrderById_shouldFailWhenOrderDoesNotExist() {
-        when(orderRepository.findById(99L))
+        when(orderRepository.findByIdAndUser_Email(99L, TEST_EMAIL))
                 .thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> orderService.getOrderById(99L)
+                () -> orderService.getOrderById(99L, TEST_EMAIL)
         );
 
         assertEquals(404, exception.getStatusCode().value());
         assertEquals("Order not found", exception.getReason());
     }
 
-    // 13. All existing orders are returned
+    // 13. Only the current user's orders are returned
     @Test
-    void getAllOrders_shouldReturnAllOrders() {
-
+    void getAllOrders_shouldReturnAllOrdersForUser() {
         Order order1 = new Order();
         Order order2 = new Order();
 
-        when(orderRepository.findAll())
+        when(orderRepository.findAllByUser_Email(TEST_EMAIL))
                 .thenReturn(List.of(order1, order2));
 
-        List<Order> result = orderService.getAllOrders();
+        List<Order> result = orderService.getAllOrders(TEST_EMAIL);
 
         assertNotNull(result);
         assertEquals(2, result.size());
         assertSame(order1, result.get(0));
         assertSame(order2, result.get(1));
 
-        verify(orderRepository).findAll();
+        verify(orderRepository).findAllByUser_Email(TEST_EMAIL);
     }
 
-    // 14. Empty list is returned when no orders exist
+    // 14. Empty list is returned when the user has no orders
     @Test
     void getAllOrders_shouldReturnEmptyListWhenNoOrdersExist() {
-
-        when(orderRepository.findAll())
+        when(orderRepository.findAllByUser_Email(TEST_EMAIL))
                 .thenReturn(List.of());
 
-        List<Order> result = orderService.getAllOrders();
+        List<Order> result = orderService.getAllOrders(TEST_EMAIL);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
 
-        verify(orderRepository).findAll();
+        verify(orderRepository).findAllByUser_Email(TEST_EMAIL);
     }
 }
