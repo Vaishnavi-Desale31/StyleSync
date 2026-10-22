@@ -5,7 +5,8 @@ import com.project.stylesync_ai.pricecomparison.PriceComparisonService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -21,8 +22,16 @@ public class PriceComparisonController {
 
     @GetMapping("/test")
     public List<PriceOffer> comparePrices(
-            @RequestParam(defaultValue = "Premium Black T-Shirt")
+            @RequestParam(required = false)
              String productName) {
+
+        if(productName == null || productName.isBlank()){
+            throw  new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Product name must not be blank"
+            );
+        }
+        productName = productName.trim();
 
         List<PriceOffer> offers = List.of(
                 new PriceOffer(
