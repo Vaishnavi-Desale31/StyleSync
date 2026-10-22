@@ -16,7 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.util.UUID;
-
+import com.project.stylesync_ai.entity.Order;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -155,5 +155,75 @@ class OrderTransactionIntegrationTest {
                 quantityAfter,
                 "The original cart quantity must be preserved"
         );
+    }
+
+    @Test
+    void successfulCheckout_shouldPersistOrderItemsAndClearCart(){
+
+        String testEmail = "success-test-"  + UUID.randomUUID()
+                + "@example.com";
+
+        User user = userRepository .saveAndFlush(
+                new User(
+                        "Checkout Test User",
+                        testEmail,
+                        "encoded-test-password"
+                )
+        );
+
+        Product product = productRepository.saveAndFlush(
+                new Product(
+                        "Checkout Test T-shirt",
+                        "Product for successful checkout testing",
+                        500.0,
+                        "TestBrand",
+                        null,
+                        "M",
+                        "Black",
+                        null
+                )
+        );
+
+        Cart cart = new Cart();
+        cart.setUser(user);
+
+        CartItem cartItem = new CartItem();
+        cartItem.setProduct(product);
+        cartItem.setQuantity(2);
+        cart.addItem(cartItem);
+
+        cart = cartRepository.saveAndFlush(cart);
+        Long cartId = cart.getId();
+
+        Order savedOrder =
+                orderService.createOrderFromCart(cartId, testEmail);
+
+        assertNotNull(savedOrder.getId());
+        assertEquals("PLACED", savedOrder.getStatus());
+        assertEquals(1000.0, savedOrder.getTotalAmount(),0.001);
+
+        Long persistedItemCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM order_items WHERE order_id = ?",
+                Long.class,
+                savedOrder.getId()
+        );
+
+        assertEquals(1, persistedItemCount);
+
+        String persistedProductName = jdbcTemplate.queryForObject(
+                "SELECT product_name FROM order_items WHERE order_id = ?",
+                String.class,
+                savedOrder.getId()
+        );
+
+        assertEquals("Checkout Test T-shirt", persistedProductName);
+
+        Integer remainingCartItems = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM cart_items WHERE cart_id = ?",
+                Integer.class,
+                cartId
+        );
+
+        assertEquals(0, remainingCartItems);
     }
 }
