@@ -370,4 +370,105 @@ class CartServiceTest {
         assertEquals("Cart not found", exception.getReason());
         verify(cartRepository, never()).save(any(Cart.class));
     }
+
+
+    @Test
+    void getCartById_shouldRejectCartOwnedByAnotherUser() {
+        String anotherUserEmail = "another@example.com";
+
+        // The cart ID does not match the requesting user's email.
+        when(cartRepository.findByIdAndUser_Email(2L, anotherUserEmail))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> cartService.getCartById(2L, anotherUserEmail)
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+        assertEquals("Cart not found", exception.getReason());
+
+        verify(cartRepository)
+                .findByIdAndUser_Email(2L, anotherUserEmail);
+    }
+
+    @Test
+    void addProduct_shouldRejectCartOwnedByAnotherUser() {
+        String anotherUserEmail = "another@example.com";
+
+        when(cartRepository.findByIdAndUser_Email(2L, anotherUserEmail))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> cartService.addProduct(
+                        2L, 2L, 1, anotherUserEmail
+                )
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+        assertEquals("Cart not found", exception.getReason());
+
+        verify(cartRepository, never()).save(any(Cart.class));
+        verifyNoInteractions(productRepository);
+    }
+
+    @Test
+    void clearCart_shouldRejectCartOwnedByAnotherUser() {
+        String anotherUserEmail = "another@example.com";
+
+        when(cartRepository.findByIdAndUser_Email(2L, anotherUserEmail))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> cartService.clearCart(2L, anotherUserEmail)
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+        assertEquals("Cart not found", exception.getReason());
+
+        verify(cartRepository, never()).save(any(Cart.class));
+    }
+
+
+    @Test
+    void updateQuantity_shouldRejectCartOwnedByAnotherUser() {
+        String anotherUserEmail = "another@example.com";
+
+        when(cartRepository.findByIdAndUser_Email(2L, anotherUserEmail))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> cartService.updateQuantity(
+                        2L, 2L, 5, anotherUserEmail
+                )
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+        assertEquals("Cart not found", exception.getReason());
+
+        verify(cartRepository, never()).save(any(Cart.class));
+    }
+
+    @Test
+    void removeProduct_shouldRejectCartOwnedByAnotherUser() {
+        String anotherUserEmail = "another@example.com";
+
+        when(cartRepository.findByIdAndUser_Email(2L, anotherUserEmail))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> cartService.removeProduct(
+                        2L, 2L, anotherUserEmail
+                )
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+        assertEquals("Cart not found", exception.getReason());
+
+        verify(cartRepository, never()).save(any(Cart.class));
+    }
 }

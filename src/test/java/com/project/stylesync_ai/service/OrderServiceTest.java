@@ -101,7 +101,29 @@ class OrderServiceTest {
         verify(cartRepository, never()).save(any(Cart.class));
     }
 
-    // 3. Checkout fails when the cart is empty
+   //3. Checkout must reject a cart that the authenticated user does not own
+    @Test
+    void createOrderFromCart_shouldRejectCartOwnedByAnotherUser() {
+        String anotherUserEmail = "another@example.com";
+
+        when(cartRepository.findByIdAndUser_Email(3L, anotherUserEmail))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.createOrderFromCart(3L, anotherUserEmail)
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+        assertEquals("Cart not found", exception.getReason());
+
+        verify(cartRepository)
+                .findByIdAndUser_Email(3L, anotherUserEmail);
+        verify(orderRepository, never()).save(any(Order.class));
+        verify(cartRepository, never()).save(any(Cart.class));
+    }
+
+    // 4. Checkout fails when the cart is empty
     @Test
     void createOrderFromCart_shouldFailWhenCartIsEmpty() {
         Cart cart = mock(Cart.class);
@@ -126,7 +148,7 @@ class OrderServiceTest {
         verify(cartRepository, never()).save(any(Cart.class));
     }
 
-    // 4. Checkout fails when the cart items list is null
+    // 5. Checkout fails when the cart items list is null
     @Test
     void createOrderFromCart_shouldRejectNullItems() {
         Cart cart = mock(Cart.class);
@@ -150,7 +172,7 @@ class OrderServiceTest {
         verify(cartRepository, never()).save(any(Cart.class));
     }
 
-    // 5. Total is calculated correctly for multiple products
+    // 6. Total is calculated correctly for multiple products
     @Test
     void createOrderFromCart_shouldCalculateTotalForMultipleProducts() {
         Cart cart = mock(Cart.class);
@@ -190,7 +212,7 @@ class OrderServiceTest {
         verify(orderRepository).save(any(Order.class));
     }
 
-    // 6. Cart is cleared after successful checkout
+    // 7. Cart is cleared after successful checkout
     @Test
     void createOrderFromCart_shouldClearCartAfterSuccessfulOrder() {
         Cart cart = mock(Cart.class);
@@ -218,7 +240,7 @@ class OrderServiceTest {
         verify(cartRepository).save(cart);
     }
 
-    // 7. Order is saved before the cart is cleared and saved
+    // 8. Order is saved before the cart is cleared and saved
     @Test
     void createOrderFromCart_shouldSaveOrderBeforeClearingCart() {
         Cart cart = mock(Cart.class);
@@ -248,7 +270,7 @@ class OrderServiceTest {
         order.verify(cartRepository).save(cart);
     }
 
-    // 8. Order retains the product price used at checkout
+    // 9. Order retains the product price used at checkout
     @Test
     void createOrderFromCart_shouldStoreProductPriceSnapshot() {
         Cart cart = mock(Cart.class);
@@ -275,7 +297,7 @@ class OrderServiceTest {
         assertEquals(1598.0, result.getTotalAmount(), 0.001);
     }
 
-    // 9. Cart is not cleared when saving the order fails
+    // 10. Cart is not cleared when saving the order fails
     @Test
     void createOrderFromCart_shouldNotClearCartWhenOrderSaveFails() {
         Cart cart = mock(Cart.class);
@@ -307,7 +329,7 @@ class OrderServiceTest {
         verify(cartRepository, never()).save(any(Cart.class));
     }
 
-    // 10. Failure while saving the cleared cart is propagated
+    // 11. Failure while saving the cleared cart is propagated
     @Test
     void createOrderFromCart_shouldPropagateCartSaveFailure() {
         Cart cart = mock(Cart.class);
@@ -343,7 +365,7 @@ class OrderServiceTest {
         verify(cartRepository).save(cart);
     }
 
-    // 11. Existing order is returned only for its owner
+    // 12. Existing order is returned only for its owner
     @Test
     void getOrderById_shouldReturnOrderWhenItExists() {
         Order expectedOrder = new Order();
@@ -358,7 +380,7 @@ class OrderServiceTest {
                 .findByIdAndUser_Email(3L, TEST_EMAIL);
     }
 
-    // 12. Missing or unowned order returns a 404 exception
+    // 13. Missing or unowned order returns a 404 exception
     @Test
     void getOrderById_shouldFailWhenOrderDoesNotExist() {
         when(orderRepository.findByIdAndUser_Email(99L, TEST_EMAIL))
@@ -373,7 +395,7 @@ class OrderServiceTest {
         assertEquals("Order not found", exception.getReason());
     }
 
-    // 13. Only the current user's orders are returned
+    // 14. Only the current user's orders are returned
     @Test
     void getAllOrders_shouldReturnAllOrdersForUser() {
         Order order1 = new Order();
@@ -392,7 +414,7 @@ class OrderServiceTest {
         verify(orderRepository).findAllByUser_Email(TEST_EMAIL);
     }
 
-    // 14. Empty list is returned when the user has no orders
+    // 15. Empty list is returned when the user has no orders
     @Test
     void getAllOrders_shouldReturnEmptyListWhenNoOrdersExist() {
         when(orderRepository.findAllByUser_Email(TEST_EMAIL))
