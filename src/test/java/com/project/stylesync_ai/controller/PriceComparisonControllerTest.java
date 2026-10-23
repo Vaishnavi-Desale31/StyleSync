@@ -1,6 +1,6 @@
 package com.project.stylesync_ai.controller;
 
-import com.project.stylesync_ai.pricecomparison.PriceComparisonService;
+import com.project.stylesync_ai.service.PriceComparisonService;
 import com.project.stylesync_ai.pricecomparison.PriceOffer;
 
 import org.junit.jupiter.api.Test;

@@ -1,12 +1,10 @@
 package com.project.stylesync_ai.service;
-
-import com.project.stylesync_ai.pricecomparison.PriceComparisonService;
 import com.project.stylesync_ai.pricecomparison.PriceOffer;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.List;
-
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PriceComparisonServiceTest {
@@ -57,5 +55,49 @@ public class PriceComparisonServiceTest {
                 service.comparePrices(List.of());
 
         assertEquals(0, result.size());
+    }
+
+    @Test
+    void comparePrices_shouldRejectNullOffersList(){
+        assertThrows(
+                NullPointerException.class,
+                () -> service.comparePrices(null)
+        );
+    }
+
+    @Test
+    void comparePrices_shouldRejectNullOffer(){
+        List<PriceOffer> offers = java.util.Arrays.asList(
+                new PriceOffer(
+                        "T-Shirt",
+                        "Amazon",
+                        new BigDecimal("899.00"),
+                        "url"
+                ),
+                null
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.comparePrices(offers)
+        );
+    }
+
+    @Test
+    void comparePrices_shouldRejectOffersWithNullPrice(){
+
+        List<PriceOffer> offers = List.of(
+                new PriceOffer(
+                        "T-Shirt",
+                        "Amazon",
+                        null,
+                        "url"
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.comparePrices(offers)
+        );
     }
 }

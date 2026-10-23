@@ -1,7 +1,7 @@
 package com.project.stylesync_ai.controller;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.project.stylesync_ai.pricecomparison.PriceOffer;
-import com.project.stylesync_ai.pricecomparison.PriceComparisonService;
+import com.project.stylesync_ai.service.PriceComparisonService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
