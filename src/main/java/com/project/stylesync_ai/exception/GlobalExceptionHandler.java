@@ -1,6 +1,7 @@
-
 package com.project.stylesync_ai.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,6 +14,9 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationErrors(
@@ -40,11 +44,12 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.NOT_FOUND)
                 .body(error);
     }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(
-            IllegalArgumentException exception){
+            IllegalArgumentException exception) {
 
-        Map<String,String> error = new HashMap<>();
+        Map<String, String> error = new HashMap<>();
         error.put("error", "Bad Request");
         error.put("message", exception.getMessage());
 
@@ -55,15 +60,29 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, String>> handleResponseStatus(
-            ResponseStatusException exception){
+            ResponseStatusException exception) {
 
-        Map<String,String> error = new HashMap<>();
-
+        Map<String, String> error = new HashMap<>();
         error.put("error", exception.getStatusCode().toString());
         error.put("message", exception.getReason());
 
         return ResponseEntity
                 .status(exception.getStatusCode())
+                .body(error);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleUnexpectedException(
+            Exception exception) {
+
+        logger.error("Unexpected error while processing request", exception);
+
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Internal Server Error");
+        error.put("message", "An unexpected error occurred");
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(error);
     }
 }
