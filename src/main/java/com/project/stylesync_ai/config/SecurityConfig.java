@@ -30,9 +30,21 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS))
+
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/login.html",
+                                "/register.html",
+                                "/favicon.ico",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**",
+                                "/api/auth/**"
+                        ).permitAll()
                         .anyRequest().authenticated())
+
                 .exceptionHandling(exceptions ->
                         exceptions.authenticationEntryPoint(
                                 (request, response, exception) ->

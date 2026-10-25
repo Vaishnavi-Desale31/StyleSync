@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | StyleSync AI</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: #faf8f5;
+            color: #222222;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 36px;
+            background: #ffffff;
+            border: 1px solid #eeeeee;
+            border-radius: 12px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.06);
+        }
+
+        .logo {
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 27px;
+            font-weight: 800;
+        }
+
+        .logo span {
+            color: #a45b45;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 27px;
+        }
+
+        .subtitle {
+            margin-bottom: 28px;
+            color: #777777;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        label {
+            display: block;
+            margin: 18px 0 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #dddddd;
+            border-radius: 5px;
+            font-size: 15px;
+        }
+
+        input:focus {
+            outline: 2px solid #a45b45;
+            outline-offset: 1px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 24px;
+            padding: 14px;
+            border: none;
+            border-radius: 5px;
+            background: #222222;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #a45b45;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #message {
+            margin-top: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .links {
+            margin-top: 22px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        a {
+            color: #a45b45;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+<main class="login-card">
+    <div class="logo">StyleSync<span>AI</span></div>
+
+    <h1>Welcome back</h1>
+    <p class="subtitle">Log in to explore your fashion collection.</p>
+
+    <form id="login-form">
+        <label for="email">Email address</label>
+        <input
+                type="email"
+                id="email"
+                name="email"
+                autocomplete="username"
+                required
+        >
+
+        <label for="password">Password</label>
+        <input
+                type="password"
+                id="password"
+                name="password"
+                autocomplete="current-password"
+                required
+        >
+
+        <button type="submit" id="login-button">Log In</button>
+    </form>
+
+    <p id="message" role="status" aria-live="polite"></p>
+
+    <div class="links">
+        Don't have an account?
+        <a href="/register.html">Register</a>
+        <br><br>
+        <a href="/">Back to home</a>
+    </div>
+</main>
+
+<script>
+    const form = document.getElementById("login-form");
+    const message = document.getElementById("message");
+    const button = document.getElementById("login-button");
+
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        message.textContent = "";
+        button.disabled = true;
+        button.textContent = "Logging in...";
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+
+        try {
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message || data.detail ||
+                    "Login failed. Check your email and password."
+                );
+            }
+
+            if (!data.accessToken) {
+                throw new Error("The server did not return an access token.");
+            }
+
+            sessionStorage.setItem("accessToken", data.accessToken);
+
+            message.textContent = "Login successful! Opening your collection...";
+
+            window.location.href = "/";
+
+        } catch (error) {
+            message.textContent = error.message;
+        } finally {
+            button.disabled = false;
+            button.textContent = "Log In";
+        }
+    });
+</script>
+</body>
+</html>
