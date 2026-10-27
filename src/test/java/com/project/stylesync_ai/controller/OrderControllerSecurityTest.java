@@ -1,5 +1,6 @@
 package com.project.stylesync_ai.controller;
 
+
 import com.project.stylesync_ai.config.JwtConfig;
 import com.project.stylesync_ai.config.SecurityConfig;
 import com.project.stylesync_ai.security.JwtAuthenticationFilter;
@@ -15,10 +16,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
+import com.project.stylesync_ai.entity.Order;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = OrderController.class)
 @AutoConfigureMockMvc
@@ -82,4 +84,35 @@ class OrderControllerSecurityTest {
         verify(jwtConfig).isTokenValid(token, userDetails);
         verify(orderService, never()).getAllOrders(email);
     }
+
+
+    @Test
+    void createCodOrder_shouldUseAuthenticatedUsersEmail() throws Exception {
+        String email = "user@example.com";
+        String token = "valid-cod-token";
+
+        UserDetails userDetails = User.withUsername(email)
+                .password("password")
+                .authorities("ROLE_USER")
+                .build();
+
+        Order order = new Order();
+        order.setPaymentMethod("COD");
+        order.setPaymentStatus("PENDING");
+        order.setStatus("PLACED");
+
+        when(jwtConfig.extractUsername(token)).thenReturn(email);
+        when(userDetailsService.loadUserByUsername(email))
+                .thenReturn(userDetails);
+        when(jwtConfig.isTokenValid(token, userDetails)).thenReturn(true);
+        when(orderService.createCodOrderFromCart(3L, email))
+                .thenReturn(order);
+
+        mockMvc.perform(post("/api/orders/cod/3")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isCreated());
+
+        verify(orderService).createCodOrderFromCart(3L, email);
+    }
+
 }

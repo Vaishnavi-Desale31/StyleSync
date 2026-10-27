@@ -27,15 +27,33 @@ public class OrderService {
     }
 
     @Transactional
-    public Order createOrderFromCart(Long cartId, String email){
+    public Order createOrderFromCart(Long cartId, String email) {
+        return createOrderFromCartInternal(cartId, email, null, null);
+    }
+
+    @Transactional
+    public Order createCodOrderFromCart(Long cartId, String email) {
+        return createOrderFromCartInternal(
+                cartId,
+                email,
+                "COD",
+                "PENDING"
+        );
+    }
+
+    private Order createOrderFromCartInternal(
+            Long cartId,
+            String email,
+            String paymentMethod,
+            String paymentStatus) {
 
         Cart cart = cartRepository.findByIdAndUser_Email(cartId, email)
                 .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
+                        HttpStatus.NOT_FOUND,
                         "Cart not found"
-        ));
+                ));
 
-        if(cart.getItems() == null || cart.getItems().isEmpty()){
+        if (cart.getItems() == null || cart.getItems().isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Cannot create an order from an empty cart"
@@ -47,14 +65,18 @@ public class OrderService {
         order.setOrderDate(LocalDateTime.now());
         order.setStatus("PLACED");
 
+        if (paymentMethod != null) {
+            order.setPaymentMethod(paymentMethod);
+            order.setPaymentStatus(paymentStatus);
+        }
+
         double totalAmount = 0.0;
         List<OrderItem> orderItems = new ArrayList<>();
 
-        for(CartItem cartItem : cart.getItems()){
+        for (CartItem cartItem : cart.getItems()) {
             OrderItem orderItem = new OrderItem();
 
             orderItem.setProductId(cartItem.getProduct().getId());
-
             orderItem.setProductName(cartItem.getProduct().getName());
             orderItem.setQuantity(cartItem.getQuantity());
             orderItem.setPrice(cartItem.getProduct().getPrice());
@@ -66,7 +88,7 @@ public class OrderService {
             orderItems.add(orderItem);
         }
 
-       order.setTotalAmount(totalAmount);
+        order.setTotalAmount(totalAmount);
         order.setItems(orderItems);
 
         Order savedOrder = orderRepository.save(order);

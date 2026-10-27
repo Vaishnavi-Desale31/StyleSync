@@ -19,12 +19,12 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    @PostMapping("/from-cart/{cartId}")
+    @PostMapping("/cod/{cartId}")
     @ResponseStatus(HttpStatus.CREATED)
-    public Order getOrderFromCart(
+    public Order createCodOrder(
             @PathVariable Long cartId,
-            Authentication authentication){
-        return orderService.createOrderFromCart(
+            Authentication authentication) {
+        return orderService.createCodOrderFromCart(
                 cartId,
                 authentication.getName());
     }

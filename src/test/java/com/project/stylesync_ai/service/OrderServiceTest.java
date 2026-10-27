@@ -365,7 +365,43 @@ class OrderServiceTest {
         verify(cartRepository).save(cart);
     }
 
-    // 12. Existing order is returned only for its owner
+
+    //12.COD checkout records payment details and clears the cart
+    @Test
+    void createCodOrderFromCart_shouldSetCodPaymentDetails() {
+        Cart cart = mock(Cart.class);
+        CartItem cartItem = mock(CartItem.class);
+        Product product = mock(Product.class);
+
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
+                .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(createTestUser());
+        when(cart.getItems()).thenReturn(List.of(cartItem));
+        when(cartItem.getProduct()).thenReturn(product);
+        when(cartItem.getQuantity()).thenReturn(2);
+
+        when(product.getId()).thenReturn(2L);
+        when(product.getName()).thenReturn("Premium Black T-Shirt");
+        when(product.getPrice()).thenReturn(799.0);
+
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Order result = orderService.createCodOrderFromCart(
+                3L, TEST_EMAIL);
+
+        assertNotNull(result);
+        assertEquals("PLACED", result.getStatus());
+        assertEquals("COD", result.getPaymentMethod());
+        assertEquals("PENDING", result.getPaymentStatus());
+        assertEquals(1598.0, result.getTotalAmount(), 0.001);
+
+        verify(orderRepository).save(any(Order.class));
+        verify(cart).clearItems();
+        verify(cartRepository).save(cart);
+    }
+
+    // 13. Existing order is returned only for its owner
     @Test
     void getOrderById_shouldReturnOrderWhenItExists() {
         Order expectedOrder = new Order();
@@ -380,7 +416,7 @@ class OrderServiceTest {
                 .findByIdAndUser_Email(3L, TEST_EMAIL);
     }
 
-    // 13. Missing or unowned order returns a 404 exception
+    // 14. Missing or unowned order returns a 404 exception
     @Test
     void getOrderById_shouldFailWhenOrderDoesNotExist() {
         when(orderRepository.findByIdAndUser_Email(99L, TEST_EMAIL))
@@ -395,7 +431,7 @@ class OrderServiceTest {
         assertEquals("Order not found", exception.getReason());
     }
 
-    // 14. Only the current user's orders are returned
+    // 15. Only the current user's orders are returned
     @Test
     void getAllOrders_shouldReturnAllOrdersForUser() {
         Order order1 = new Order();
@@ -414,7 +450,7 @@ class OrderServiceTest {
         verify(orderRepository).findAllByUser_Email(TEST_EMAIL);
     }
 
-    // 15. Empty list is returned when the user has no orders
+    // 16. Empty list is returned when the user has no orders
     @Test
     void getAllOrders_shouldReturnEmptyListWhenNoOrdersExist() {
         when(orderRepository.findAllByUser_Email(TEST_EMAIL))
