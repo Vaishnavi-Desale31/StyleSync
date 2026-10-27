@@ -204,11 +204,8 @@ public class RazorpayPaymentService {
         }
 
         try {
-            RazorpayClient client =
-                    new RazorpayClient(keyId, keySecret);
-
-            JSONObject payment = client.payments.fetch(
-                    request.getRazorpayPaymentId()).toJson();
+            JSONObject payment = fetchPayment(
+                    request.getRazorpayPaymentId());
 
             if (!order.getRazorpayOrderId().equals(
                     payment.getString("order_id"))
@@ -282,5 +279,15 @@ public class RazorpayPaymentService {
         }
 
         return true;
+    }
+
+    RazorpayClient createRazorpayClient() throws Exception {
+        return new RazorpayClient(keyId, keySecret);
+    }
+
+    JSONObject fetchPayment(String paymentId) throws Exception {
+        RazorpayClient client = createRazorpayClient();
+
+        return client.payments.fetch(paymentId).toJson();
     }
 }

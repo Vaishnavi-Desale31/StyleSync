@@ -14,7 +14,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
+import org.json.JSONObject;
+import org.mockito.Spy;
 
+import static org.mockito.Mockito.doReturn;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
@@ -42,6 +45,7 @@ class RazorpayPaymentServiceTest {
     @Mock
     private OrderRepository orderRepository;
 
+    @Spy
     @InjectMocks
     private RazorpayPaymentService razorpayPaymentService;
 
@@ -254,6 +258,68 @@ class RazorpayPaymentServiceTest {
         );
     }
 
+    @Test
+    void verifyPayment_shouldRejectAmountMismatch() throws Exception {        assertPaymentRejected(
+                new JSONObject()
+                        .put("order_id", RAZORPAY_ORDER_ID)
+                        .put("status", "captured")
+                        .put("amount", 50000)
+                        .put("currency", "INR"),
+                "Payment amount or currency does not match"
+        );
+    }
+
+    @Test
+    void verifyPayment_shouldRejectCurrencyMismatch() throws Exception {        assertPaymentRejected(
+                new JSONObject()
+                        .put("order_id", RAZORPAY_ORDER_ID)
+                        .put("status", "captured")
+                        .put("amount", 79900)
+                        .put("currency", "USD"),
+                "Payment amount or currency does not match"
+        );
+    }
+
+    @Test
+    void verifyPayment_shouldRejectPaymentNotCaptured() throws Exception {        assertPaymentRejected(
+                new JSONObject()
+                        .put("order_id", RAZORPAY_ORDER_ID)
+                        .put("status", "authorized")
+                        .put("amount", 79900)
+                        .put("currency", "INR"),
+                "Payment has not been captured for this order"
+        );
+    }
+
+    private void assertPaymentRejected(
+            JSONObject payment,
+            String expectedReason) throws Exception {
+
+        RazorpayVerifyRequest request = validRequest();
+        Order order = razorpayOrder();
+
+        when(orderRepository.findByIdAndUser_Email(10L, EMAIL))
+                .thenReturn(Optional.of(order));
+
+        doReturn(payment)
+                .when(razorpayPaymentService)
+                .fetchPayment(PAYMENT_ID);
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> razorpayPaymentService.verifyPayment(request, EMAIL)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        assertEquals(expectedReason, exception.getReason());
+
+        assertEquals("PENDING", order.getPaymentStatus());
+        verify(orderRepository, never()).save(order);
+        verify(cartRepository, never())
+                .findByIdAndUser_Email(
+                        org.mockito.ArgumentMatchers.anyLong(),
+                        org.mockito.ArgumentMatchers.anyString());
+    }
     private RazorpayVerifyRequest validRequest() {
         RazorpayVerifyRequest request = new RazorpayVerifyRequest();
         request.setOrderId(10L);
