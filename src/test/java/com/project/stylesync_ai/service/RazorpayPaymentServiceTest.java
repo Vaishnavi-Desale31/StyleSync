@@ -16,7 +16,16 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 import org.json.JSONObject;
 import org.mockito.Spy;
+import com.project.stylesync_ai.entity.Cart;
+import com.project.stylesync_ai.entity.CartItem;
+import com.project.stylesync_ai.entity.Product;
+import com.project.stylesync_ai.entity.User;
 
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.doReturn;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -365,5 +374,49 @@ class RazorpayPaymentServiceTest {
             throw new IllegalStateException(
                     "Could not generate test signature", exception);
         }
+    }
+
+    @Test
+    void createPaymentOrder_shouldReturnBadGatewayWhenRazorpayFails()
+            throws Exception {
+
+        Cart cart = org.mockito.Mockito.mock(Cart.class);
+        CartItem cartItem = org.mockito.Mockito.mock(CartItem.class);
+        Product product = org.mockito.Mockito.mock(Product.class);
+        User user = org.mockito.Mockito.mock(User.class);
+
+        when(cartRepository.findByIdAndUser_Email(2L, EMAIL))
+                .thenReturn(Optional.of(cart));
+
+        when(cart.getUser()).thenReturn(user);
+        when(cart.getItems()).thenReturn(List.of(cartItem));
+
+        when(cartItem.getProduct()).thenReturn(product);
+        when(cartItem.getQuantity()).thenReturn(2);
+
+        when(product.getId()).thenReturn(2L);
+        when(product.getName()).thenReturn("Premium Black T-Shirt");
+        when(product.getPrice()).thenReturn(799.0);
+
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        doThrow(new Exception("Razorpay service unavailable"))
+                .when(razorpayPaymentService)
+                .createRemoteOrder(any(JSONObject.class));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> razorpayPaymentService.createPaymentOrder(2L, EMAIL)
+        );
+
+        assertEquals(HttpStatus.BAD_GATEWAY, exception.getStatusCode());
+        assertEquals(
+                "Unable to create Razorpay order",
+                exception.getReason()
+        );
+
+        verify(orderRepository, times(1)).save(any(Order.class));
+        verify(cart, never()).clearItems();
     }
 }

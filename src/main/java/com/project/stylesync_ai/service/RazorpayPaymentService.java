@@ -107,9 +107,6 @@ public class RazorpayPaymentService {
         Order savedOrder = orderRepository.save(order);
 
         try {
-            RazorpayClient client =
-                    new RazorpayClient(keyId, keySecret);
-
             JSONObject request = new JSONObject();
             request.put("amount", amountPaise);
             request.put("currency", "INR");
@@ -117,7 +114,7 @@ public class RazorpayPaymentService {
             request.put("notes", new JSONObject()
                     .put("local_order_id", savedOrder.getId()));
 
-            JSONObject razorpayOrder = client.orders.create(request).toJson();
+            JSONObject razorpayOrder = createRemoteOrder(request);
 
             String razorpayOrderId = razorpayOrder.getString("id");
 
@@ -138,6 +135,12 @@ public class RazorpayPaymentService {
                     "Unable to create Razorpay order"
             );
         }
+    }
+
+    // Separate method so tests can simulate Razorpay API failures.
+    JSONObject createRemoteOrder(JSONObject request) throws Exception {
+        RazorpayClient client = new RazorpayClient(keyId, keySecret);
+        return client.orders.create(request).toJson();
     }
 
     @Transactional
