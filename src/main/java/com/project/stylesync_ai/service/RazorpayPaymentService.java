@@ -144,9 +144,8 @@ public class RazorpayPaymentService {
     public Order verifyPayment(
             RazorpayVerifyRequest request, String email) {
 
-        checkCredentials();
-
-        if (request.getOrderId() == null
+        if (request == null
+                || request.getOrderId() == null
                 || request.getRazorpayOrderId() == null
                 || request.getRazorpayOrderId().isBlank()
                 || request.getRazorpayPaymentId() == null
@@ -158,6 +157,8 @@ public class RazorpayPaymentService {
                     HttpStatus.BAD_REQUEST,
                     "Payment verification fields are required");
         }
+
+        checkCredentials();
 
         Order order = orderRepository.findByIdAndUser_Email(
                         request.getOrderId(), email)
