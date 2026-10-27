@@ -175,13 +175,18 @@ public class RazorpayPaymentService {
                     "Razorpay order does not match");
         }
 
+        boolean signatureValid;
         try {
-            Utils.verifySignature(
+            signatureValid = Utils.verifySignature(
                     order.getRazorpayOrderId() + "|"
                             + request.getRazorpayPaymentId(),
                     request.getRazorpaySignature(),
                     keySecret);
         } catch (Exception exception) {
+            signatureValid = false;
+        }
+
+        if (!signatureValid) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Invalid payment signature");
