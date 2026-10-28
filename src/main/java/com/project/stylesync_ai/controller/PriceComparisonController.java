@@ -57,4 +57,10 @@ public class PriceComparisonController {
         return priceComparisonService.comparePrices(offers);
     }
 
+    @GetMapping("/{productId}")
+    public List<PriceOffer> compareProductPrices(
+            @org.springframework.web.bind.annotation.PathVariable Long productId) {
+
+        return priceComparisonService.compareProductPrices(productId);
+    }
 }
