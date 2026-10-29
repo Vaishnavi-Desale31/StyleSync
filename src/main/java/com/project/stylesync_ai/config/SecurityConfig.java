@@ -4,6 +4,7 @@ package com.project.stylesync_ai.config;
 import com.project.stylesync_ai.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -41,9 +42,27 @@ public class SecurityConfig {
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
-                                "/api/auth/**"
+                                "/api/auth/**",
+                                "/error"
                         ).permitAll()
-                        .anyRequest().authenticated())
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/price-comparison/*/offers"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/price-comparison/offers/**"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/price-comparison/offers/**"
+                        ).hasRole("ADMIN")
+
+                        .anyRequest().authenticated()
+                )
 
                 .exceptionHandling(exceptions ->
                         exceptions.authenticationEntryPoint(

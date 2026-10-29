@@ -1,4 +1,3 @@
-
 package com.project.stylesync_ai.service;
 
 import com.project.stylesync_ai.entity.User;
@@ -29,10 +28,17 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "User not found"));
 
+        String role = user.getRole();
+
+        if (!"USER".equals(role) && !"ADMIN".equals(role)) {
+            throw new UsernameNotFoundException(
+                    "User has an invalid role configuration");
+        }
+
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getEmail())
                 .password(user.getPassword())
-                .roles("USER")
+                .roles(role)
                 .build();
     }
 }

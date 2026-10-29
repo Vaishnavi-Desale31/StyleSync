@@ -2,7 +2,6 @@ package com.project.stylesync_ai.entity;
 
 import jakarta.persistence.*;
 
-
 @Entity
 @Table(name = "users")
 public class User {
@@ -20,14 +19,17 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    public User(){
+    @Column(nullable = false, length = 20)
+    private String role = "USER";
 
+    public User() {
     }
 
     public User(String name, String email, String password) {
         this.name = name;
         this.email = email;
         this.password = password;
+        this.role = "USER";
     }
 
     public Long getId() {
@@ -60,5 +62,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

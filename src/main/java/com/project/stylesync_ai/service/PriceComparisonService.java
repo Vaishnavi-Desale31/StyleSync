@@ -1,16 +1,19 @@
 package com.project.stylesync_ai.service;
 
+import com.project.stylesync_ai.dto.PriceOfferRequest;
 import com.project.stylesync_ai.entity.PriceOfferEntity;
+import com.project.stylesync_ai.entity.Product;
 import com.project.stylesync_ai.pricecomparison.PriceOffer;
 import com.project.stylesync_ai.repository.PriceRepository;
 import com.project.stylesync_ai.repository.ProductRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Comparator;
 
 @Service
 public class PriceComparisonService {
@@ -44,16 +47,15 @@ public class PriceComparisonService {
                 .toList();
     }
 
-    // New method: compare saved offers for a product.
+    // Existing method: compare saved offers for a product.
     public List<PriceOffer> compareProductPrices(Long productId) {
-
         if (productId == null || productId <= 0) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Product ID must be greater than zero");
         }
 
-        var product = productRepository.findById(productId)
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Product not found"));
@@ -68,5 +70,76 @@ public class PriceComparisonService {
                         offer.getPrice(),
                         offer.getProductUrl()))
                 .toList();
+    }
+
+    // Admin operation: create a price offer.
+    @Transactional
+    public PriceOfferEntity createOffer(
+            Long productId,
+            PriceOfferRequest request) {
+
+        validateProductId(productId);
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Product not found"));
+
+        PriceOfferEntity offer = new PriceOfferEntity(
+                product,
+                request.platform().trim(),
+                request.price(),
+                request.productUrl().trim());
+
+        return priceRepository.save(offer);
+    }
+
+    // Admin operation: update an existing price offer.
+    @Transactional
+    public PriceOfferEntity updateOffer(
+            Long offerId,
+            PriceOfferRequest request) {
+
+        validateOfferId(offerId);
+
+        PriceOfferEntity offer = priceRepository.findById(offerId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Price offer not found"));
+
+        offer.setPlatform(request.platform().trim());
+        offer.setPrice(request.price());
+        offer.setProductUrl(request.productUrl().trim());
+
+        return priceRepository.save(offer);
+    }
+
+    // Admin operation: delete an existing price offer.
+    @Transactional
+    public void deleteOffer(Long offerId) {
+        validateOfferId(offerId);
+
+        PriceOfferEntity offer = priceRepository.findById(offerId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Price offer not found"));
+
+        priceRepository.delete(offer);
+    }
+
+    private void validateProductId(Long productId) {
+        if (productId == null || productId <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Product ID must be greater than zero");
+        }
+    }
+
+    private void validateOfferId(Long offerId) {
+        if (offerId == null || offerId <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Offer ID must be greater than zero");
+        }
     }
 }
