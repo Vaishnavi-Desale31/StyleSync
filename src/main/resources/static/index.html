@@ -594,6 +594,11 @@
             Proceed to Checkout
         </button>
 
+        <button class="button" id="pay-online-button" type="button"
+                style="margin-left: 10px;">
+            Pay Online (Razorpay)
+        </button>
+
         <p class="status" id="checkout-status" role="status"></p>
     </section>
 
@@ -1698,6 +1703,200 @@
             }
         });
 
+    function loadRazorpayScript() {
+        return new Promise((resolve, reject) => {
+            if (window.Razorpay) {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement("script");
+            script.src = "https://checkout.razorpay.com/v1/checkout.js";
+            script.onload = () => resolve();
+            script.onerror = () =>
+                reject(new Error("Could not load Razorpay checkout."));
+            document.head.appendChild(script);
+        });
+    }
+
+    document.getElementById("pay-online-button")
+        .addEventListener("click", async () => {
+            const payButton = document.getElementById("pay-online-button");
+            const checkoutStatus =
+                document.getElementById("checkout-status");
+
+            const token = sessionStorage.getItem("accessToken");
+            const cartId = sessionStorage.getItem("cartId");
+
+            if (!token) {
+                window.location.href = "/login.html";
+                return;
+            }
+
+            if (!cartId) {
+                checkoutStatus.textContent =
+                    "Your cart is empty. Add a product before checkout.";
+                return;
+            }
+
+            payButton.disabled = true;
+            checkoutStatus.textContent = "Creating payment order...";
+
+            const authHeaders = {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            };
+
+            try {
+                await loadRazorpayScript();
+
+                const createResponse = await fetch(
+                    `/api/payments/razorpay/orders/${encodeURIComponent(cartId)}`,
+                    { method: "POST", headers: authHeaders }
+                );
+
+                if (createResponse.status === 401) {
+                    sessionStorage.removeItem("accessToken");
+                    sessionStorage.removeItem("cartId");
+                    window.location.href = "/login.html";
+                    return;
+                }
+
+                if (!createResponse.ok) {
+                    const errorText = await createResponse.text();
+                    throw new Error(
+                        errorText || "Payment failed: " + createResponse.status
+                    );
+                }
+
+                const paymentOrder = await createResponse.json();
+
+                const checkout = new window.Razorpay({
+                    key: paymentOrder.keyId,
+                    amount: paymentOrder.amount,
+                    currency: paymentOrder.currency,
+                    name: "StyleSync AI",
+                    description: "Order #" + paymentOrder.localOrderId,
+                    order_id: paymentOrder.razorpayOrderId,
+                    handler: async (result) => {
+                        checkoutStatus.textContent = "Verifying payment...";
+
+                        try {
+                            const verifyResponse = await fetch(
+                                "/api/payments/razorpay/verify",
+                                {
+                                    method: "POST",
+                                    headers: authHeaders,
+                                    body: JSON.stringify({
+                                        orderId: paymentOrder.localOrderId,
+                                        razorpayOrderId:
+                                        result.razorpay_order_id,
+                                        razorpayPaymentId:
+                                        result.razorpay_payment_id,
+                                        razorpaySignature:
+                                        result.razorpay_signature
+                                    })
+                                }
+                            );
+
+                            if (!verifyResponse.ok) {
+                                const errorText = await verifyResponse.text();
+                                throw new Error(
+                                    errorText ||
+                                    "Verification failed: " +
+                                    verifyResponse.status
+                                );
+                            }
+
+                            checkoutStatus.textContent =
+                                "Payment successful! Order ID: " +
+                                paymentOrder.localOrderId;
+
+                            await loadCart();
+                            await loadOrders();
+                        } catch (error) {
+                            console.error("Verify payment error:", error);
+                            checkoutStatus.textContent =
+                                "Payment could not be verified. " +
+                                error.message;
+                        } finally {
+                            payButton.disabled = false;
+                        }
+                    },
+                    modal: {
+                        ondismiss: () => {
+                            checkoutStatus.textContent =
+                                "Payment cancelled. Your order is awaiting " +
+                                "payment; you can cancel it in My Orders.";
+                            payButton.disabled = false;
+                            loadOrders();
+                        }
+                    }
+                });
+
+                checkout.on("payment.failed", () => {
+                    checkoutStatus.textContent =
+                        "Payment failed. Please try again.";
+                });
+
+                checkout.open();
+            } catch (error) {
+                console.error("Razorpay error:", error);
+                checkoutStatus.textContent =
+                    "Could not start payment. " + error.message;
+                payButton.disabled = false;
+            }
+        });
+
+    async function cancelOrder(orderId) {
+        const token = sessionStorage.getItem("accessToken");
+
+        if (!token) {
+            window.location.href = "/login.html";
+            return;
+        }
+
+        const reason = prompt(
+            "Reason for cancelling order #" + orderId + " (optional):"
+        );
+
+        if (reason === null) {
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `/api/orders/${encodeURIComponent(orderId)}/cancel`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({ reason: reason })
+                }
+            );
+
+            if (response.status === 401) {
+                sessionStorage.removeItem("accessToken");
+                window.location.href = "/login.html";
+                return;
+            }
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(
+                    errorText || "Cancel failed: " + response.status
+                );
+            }
+
+            await loadOrders();
+        } catch (error) {
+            console.error("Cancel order error:", error);
+            alert("Could not cancel this order. " + error.message);
+        }
+    }
+
     async function loadOrders() {
         const ordersList = document.getElementById("orders-list");
         const ordersStatus = document.getElementById("orders-status");
@@ -1794,14 +1993,52 @@
                 total.textContent =
                     "Total: " + formatINR(order.totalAmount);
 
+                const payment = document.createElement("p");
+                payment.textContent =
+                    "Payment: " + (order.paymentMethod || "—") +
+                    " (" + (order.paymentStatus || "—") + ")";
+
                 card.append(
                     heading,
                     status,
+                    payment,
                     date,
                     itemsHeading,
                     itemsList,
                     total
                 );
+
+                const history = order.statusHistory || [];
+
+                if (history.length > 0) {
+                    const trackHeading = document.createElement("h4");
+                    trackHeading.textContent = "Tracking";
+
+                    const timeline = document.createElement("ul");
+
+                    history.forEach(event => {
+                        const entry = document.createElement("li");
+                        entry.textContent =
+                            event.status.replaceAll("_", " ") +
+                            " — " +
+                            new Date(event.createdAt).toLocaleString() +
+                            (event.note ? " (" + event.note + ")" : "");
+                        timeline.appendChild(entry);
+                    });
+
+                    card.append(trackHeading, timeline);
+                }
+
+                if (["PAYMENT_PENDING", "PLACED", "CONFIRMED"]
+                    .includes(order.status)) {
+                    const cancelButton = document.createElement("button");
+                    cancelButton.type = "button";
+                    cancelButton.className = "wishlist-remove-button";
+                    cancelButton.textContent = "Cancel Order";
+                    cancelButton.addEventListener(
+                        "click", () => cancelOrder(order.id));
+                    card.appendChild(cancelButton);
+                }
 
                 ordersList.appendChild(card);
             });

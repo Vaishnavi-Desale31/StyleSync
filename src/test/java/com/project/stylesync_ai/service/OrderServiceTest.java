@@ -546,4 +546,111 @@ class OrderServiceTest {
         assertEquals(400, ex.getStatusCode().value());
         verify(orderRepository, never()).save(any());
     }
+
+    // ---------- Cancellation and delivery status ----------
+
+    private Order orderWith(String status, String method, String payStatus) {
+        Order order = new Order();
+        order.setPaymentMethod(method);
+        order.setPaymentStatus(payStatus);
+        order.recordStatus(status, "start");
+        return order;
+    }
+
+    @Test
+    void cancelOrder_shouldCancelPlacedCodOrderAndRecordHistory() {
+        Order order = orderWith("PLACED", "COD", "PENDING");
+        when(orderRepository.findByIdAndUser_Email(1L, TEST_EMAIL))
+                .thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Order result = orderService.cancelOrder(1L, TEST_EMAIL, "Changed my mind");
+
+        assertEquals("CANCELLED", result.getStatus());
+        assertEquals("CANCELLED", result.getPaymentStatus());
+        assertEquals("Changed my mind", result.getCancellationReason());
+        assertNotNull(result.getCancelledAt());
+        assertEquals(2, result.getStatusHistory().size());
+    }
+
+    @Test
+    void cancelOrder_shouldMarkPaidOnlineOrderForRefund() {
+        Order order = orderWith("PLACED", "RAZORPAY", "PAID");
+        when(orderRepository.findByIdAndUser_Email(1L, TEST_EMAIL))
+                .thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Order result = orderService.cancelOrder(1L, TEST_EMAIL, null);
+
+        assertEquals("REFUND_PENDING", result.getPaymentStatus());
+        assertEquals("Cancelled", result.getCancellationReason());
+    }
+
+    @Test
+    void cancelOrder_shouldRejectShippedOrder() {
+        Order order = orderWith("SHIPPED", "COD", "PENDING");
+        when(orderRepository.findByIdAndUser_Email(1L, TEST_EMAIL))
+                .thenReturn(Optional.of(order));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.cancelOrder(1L, TEST_EMAIL, "late"));
+
+        assertEquals(409, ex.getStatusCode().value());
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void cancelOrder_shouldReturn404ForAnotherUsersOrder() {
+        when(orderRepository.findByIdAndUser_Email(1L, "other@example.com"))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.cancelOrder(1L, "other@example.com", null));
+
+        assertEquals(404, ex.getStatusCode().value());
+    }
+
+    @Test
+    void updateOrderStatus_shouldFollowDeliveryFlowAndMarkCodPaid() {
+        Order order = orderWith("PLACED", "COD", "PENDING");
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        orderService.updateOrderStatus(1L, "confirmed", null);
+        orderService.updateOrderStatus(1L, "SHIPPED", "Handed to courier");
+        orderService.updateOrderStatus(1L, "OUT_FOR_DELIVERY", null);
+        Order result = orderService.updateOrderStatus(1L, "DELIVERED", null);
+
+        assertEquals("DELIVERED", result.getStatus());
+        assertEquals("PAID", result.getPaymentStatus());
+        assertNotNull(result.getDeliveredAt());
+        assertEquals(5, result.getStatusHistory().size());
+    }
+
+    @Test
+    void updateOrderStatus_shouldRejectInvalidTransition() {
+        Order order = orderWith("PLACED", "COD", "PENDING");
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.updateOrderStatus(1L, "DELIVERED", null));
+
+        assertEquals(409, ex.getStatusCode().value());
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void updateOrderStatus_shouldRequireStatus() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.updateOrderStatus(1L, " ", null));
+
+        assertEquals(400, ex.getStatusCode().value());
+    }
 }

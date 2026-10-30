@@ -75,7 +75,7 @@ public class RazorpayPaymentService {
         order.setUser(cart.getUser());
         order.setCartId(cartId);
         order.setOrderDate(LocalDateTime.now());
-        order.setStatus("PAYMENT_PENDING");
+        order.recordStatus("PAYMENT_PENDING", "Awaiting payment");
         order.setPaymentMethod("RAZORPAY");
         order.setPaymentStatus("PENDING");
 
@@ -245,7 +245,7 @@ public class RazorpayPaymentService {
 
         order.setRazorpayPaymentId(request.getRazorpayPaymentId());
         order.setPaymentStatus("PAID");
-        order.setStatus("PLACED");
+        order.recordStatus("PLACED", "Payment received");
 
         Order savedOrder = orderRepository.save(order);
 

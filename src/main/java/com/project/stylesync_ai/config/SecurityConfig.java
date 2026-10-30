@@ -1,4 +1,3 @@
-
 package com.project.stylesync_ai.config;
 
 import com.project.stylesync_ai.security.JwtAuthenticationFilter;
@@ -60,6 +59,8 @@ public class SecurityConfig {
                                 HttpMethod.DELETE,
                                 "/api/price-comparison/offers/**"
                         ).hasRole("ADMIN")
+
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )

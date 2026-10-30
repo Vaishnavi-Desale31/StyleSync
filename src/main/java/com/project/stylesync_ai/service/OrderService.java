@@ -18,6 +18,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class OrderService {
@@ -73,7 +75,7 @@ public class OrderService {
         Order order = new Order();
         order.setUser(cart.getUser());
         order.setOrderDate(LocalDateTime.now());
-        order.setStatus("PLACED");
+        order.recordStatus("PLACED", "Order placed");
 
         if (paymentMethod != null) {
             order.setPaymentMethod(paymentMethod);
@@ -156,7 +158,7 @@ public class OrderService {
         Order order = new Order();
         order.setUser(user);
         order.setOrderDate(LocalDateTime.now());
-        order.setStatus("PLACED");
+        order.recordStatus("PLACED", "Order placed");
         order.setPaymentMethod("COD");
         order.setPaymentStatus("PENDING");
 
@@ -172,6 +174,117 @@ public class OrderService {
 
         order.setItems(orderItems);
         order.setTotalAmount(product.getPrice() * quantity);
+
+        return orderRepository.save(order);
+    }
+
+    // ---------- Cancellation, delivery status and tracking ----------
+
+    private static final Set<String> CANCELLABLE_STATUSES =
+            Set.of("PAYMENT_PENDING", "PLACED", "CONFIRMED");
+
+    private static final Map<String, Set<String>> ALLOWED_TRANSITIONS =
+            Map.of(
+                    "PLACED", Set.of("CONFIRMED"),
+                    "CONFIRMED", Set.of("SHIPPED"),
+                    "SHIPPED", Set.of("OUT_FOR_DELIVERY", "DELIVERED"),
+                    "OUT_FOR_DELIVERY", Set.of("DELIVERED")
+            );
+
+    /** Customer cancellation: only the owner of the order can cancel it. */
+    @Transactional
+    public Order cancelOrder(Long orderId, String email, String reason) {
+        Order order = orderRepository.findByIdAndUser_Email(orderId, email)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Order not found"));
+
+        return cancel(order, reason);
+    }
+
+    private Order cancel(Order order, String reason) {
+        if (!CANCELLABLE_STATUSES.contains(order.getStatus())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Order cannot be cancelled when it is "
+                            + order.getStatus());
+        }
+
+        String cleanReason = (reason == null || reason.isBlank())
+                ? "Cancelled" : reason.trim();
+
+        if (cleanReason.length() > 255) {
+            cleanReason = cleanReason.substring(0, 255);
+        }
+
+        // A paid online order needs a refund; the refund itself is
+        // processed from the Razorpay dashboard.
+        if ("PAID".equals(order.getPaymentStatus())) {
+            order.setPaymentStatus("REFUND_PENDING");
+        } else {
+            order.setPaymentStatus("CANCELLED");
+        }
+
+        order.setCancelledAt(LocalDateTime.now());
+        order.setCancellationReason(cleanReason);
+        order.recordStatus("CANCELLED", cleanReason);
+
+        return orderRepository.save(order);
+    }
+
+    /** Admin: all orders, newest first. */
+    @Transactional(readOnly = true)
+    public List<Order> getAllOrdersForAdmin() {
+        List<Order> orders = new ArrayList<>(orderRepository.findAll());
+        orders.sort((a, b) -> b.getId().compareTo(a.getId()));
+        return orders;
+    }
+
+    /** Admin: move an order through the delivery lifecycle. */
+    @Transactional
+    public Order updateOrderStatus(
+            Long orderId, String newStatus, String note) {
+
+        if (newStatus == null || newStatus.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Status is required");
+        }
+
+        String target = newStatus.trim().toUpperCase();
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Order not found"));
+
+        if ("CANCELLED".equals(target)) {
+            return cancel(order, note);
+        }
+
+        Set<String> allowed = ALLOWED_TRANSITIONS.getOrDefault(
+                order.getStatus(), Set.of());
+
+        if (!allowed.contains(target)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Cannot change order from " + order.getStatus()
+                            + " to " + target);
+        }
+
+        String cleanNote = (note == null || note.isBlank())
+                ? null : note.trim();
+
+        if (cleanNote != null && cleanNote.length() > 255) {
+            cleanNote = cleanNote.substring(0, 255);
+        }
+
+        if ("DELIVERED".equals(target)) {
+            order.setDeliveredAt(LocalDateTime.now());
+
+            if ("COD".equals(order.getPaymentMethod())) {
+                order.setPaymentStatus("PAID");
+            }
+        }
+
+        order.recordStatus(target, cleanNote);
 
         return orderRepository.save(order);
     }
