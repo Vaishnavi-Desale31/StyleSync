@@ -33,6 +33,7 @@ public class PriceComparisonController {
     }
 
     // Existing demo endpoint
+
     @GetMapping("/test")
     public List<PriceOffer> comparePrices(
             @RequestParam(required = false) String productName) {
@@ -46,29 +47,36 @@ public class PriceComparisonController {
 
         productName = productName.trim();
 
+        String encodedProductName =
+                java.net.URLEncoder.encode(
+                        productName,
+                        java.nio.charset.StandardCharsets.UTF_8
+                ).replace("+", "%20");
+
         List<PriceOffer> offers = List.of(
                 new PriceOffer(
                         productName,
                         "Amazon",
                         new BigDecimal("899.00"),
-                        "https://example.com/amazon/tshirt"
+                        "https://www.amazon.in/s?k=" + encodedProductName
                 ),
                 new PriceOffer(
                         productName,
                         "Flipkart",
                         new BigDecimal("699.00"),
-                        "https://example.com/flipkart/tshirt"
+                        "https://www.flipkart.com/search?q=" + encodedProductName
                 ),
                 new PriceOffer(
                         productName,
                         "Myntra",
                         new BigDecimal("799.00"),
-                        "https://example.com/myntra/tshirt"
+                        "https://www.myntra.com/" + encodedProductName
                 )
         );
 
         return priceComparisonService.comparePrices(offers);
     }
+
 
     // Existing database-backed price comparison endpoint
     @GetMapping("/{productId}")

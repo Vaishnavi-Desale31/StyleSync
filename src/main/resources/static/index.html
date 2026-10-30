@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StyleSync AI | Find Your Style</title>
+
     <style>
         :root {
             --ink: #222222;
@@ -103,6 +104,11 @@
 
         .button:hover {
             background: var(--accent);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .hero-art {
@@ -215,7 +221,6 @@
             text-align: center;
         }
 
-
         .cart-actions {
             display: flex;
             align-items: center;
@@ -249,6 +254,41 @@
             color: #b42318;
         }
 
+        .add-to-cart-button {
+            margin-top: 20px;
+            padding: 14px 24px;
+            border: 0;
+            border-radius: 4px;
+            background: var(--ink);
+            color: var(--white);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .add-to-cart-button:hover {
+            background: var(--accent);
+        }
+
+        .add-to-cart-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .demo-price-note {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+            margin: 8px 0 12px;
+        }
+
+        .comparison-card {
+            padding: 18px;
+            margin-bottom: 12px;
+        }
+
+        .comparison-card h3 {
+            margin-top: 0;
+        }
 
         footer {
             padding: 26px 7%;
@@ -258,44 +298,7 @@
             font-size: 13px;
         }
 
-        @media (max-width: 760px) {
-            header {
-                align-items: flex-start;
-                flex-direction: column;
-            }
-
-            nav {
-                flex-wrap: wrap;
-                gap: 16px;
-            }
-
-            .hero {
-                grid-template-columns: 1fr;
-                padding-top: 45px;
-            }
-
-            .hero-art {
-                min-height: 220px;
-            }
-
-            .product-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 480px) {
-            .product-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .section-heading {
-                align-items: flex-start;
-                flex-direction: column;
-            }
-        }
-
-
-        /* Order History Styling */
+        /* Order history styling */
         #orders-list {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -353,6 +356,31 @@
             color: var(--accent);
         }
 
+        @media (max-width: 760px) {
+            header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            nav {
+                flex-wrap: wrap;
+                gap: 16px;
+            }
+
+            .hero {
+                grid-template-columns: 1fr;
+                padding-top: 45px;
+            }
+
+            .hero-art {
+                min-height: 220px;
+            }
+
+            .product-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
         @media (max-width: 600px) {
             #orders-list {
                 grid-template-columns: 1fr;
@@ -363,15 +391,69 @@
             }
         }
 
+        @media (max-width: 480px) {
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-heading {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+
+        /* Wishlist styling */
+
+        .wishlist-button {
+            margin-top: 10px;
+            padding: 10px 16px;
+            border: 1px solid #dddddd;
+            border-radius: 4px;
+            background: white;
+            color: #a45b45;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .wishlist-button:hover {
+            border-color: #a45b45;
+            background: #faf3f0;
+        }
+
+        .wishlist-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .wishlist-remove-button {
+            margin-top: 10px;
+            padding: 10px 16px;
+            border: 1px solid #b42318;
+            border-radius: 4px;
+            background: white;
+            color: #b42318;
+            cursor: pointer;
+        }
+
+        .wishlist-remove-button:hover {
+            background: #fff1f0;
+        }
+
+        nav a span {
+            font-weight: 700;
+        }
     </style>
 </head>
+
 <body>
 <header>
     <div class="logo">StyleSync<span>AI</span></div>
+
     <nav aria-label="Main navigation">
         <a href="#home">Home</a>
         <a href="#products">Shop</a>
-        <a href="#cart">My Cart</a>
+        <a href="#wishlist">Wishlist (<span id="wishlist-count">0</span>)</a>
+        <a href="#cart">My Cart (<span id="cart-count">0</span>)</a>
         <a href="/login.html">Login</a>
         <a href="/register.html">Register</a>
         <a href="#orders">My Orders</a>
@@ -383,14 +465,17 @@
         <div>
             <span class="eyebrow">Your style, your way</span>
             <h1>Discover a style that feels like you.</h1>
+
             <p>
                 Explore everyday essentials and find pieces that match your
                 personal style. Your next favorite outfit starts here.
             </p>
+
             <a class="button" href="#products">Explore Collection</a>
         </div>
 
-        <div class="hero-art" role="img"
+        <div class="hero-art"
+             role="img"
              aria-label="StyleSync AI fashion collection introduction">
             <div>
                 <strong>Wear what<br>moves you.</strong>
@@ -415,6 +500,52 @@
             <div class="empty-state">Loading products...</div>
         </div>
     </section>
+    <section class="section" id="wishlist">
+        <div class="section-heading">
+            <div>
+                <h2>My Wishlist ♥</h2>
+                <p>Your favourite styles, saved in one place.</p>
+            </div>
+
+            <button class="button" id="refresh-wishlist" type="button">
+                Refresh Wishlist
+            </button>
+        </div>
+
+        <p class="status" id="wishlist-status" role="status">
+            Your saved products will appear here.
+        </p>
+
+        <div class="product-grid" id="wishlist-items">
+            <div class="empty-state">
+                Your wishlist is empty. Save your favourite products!
+            </div>
+        </div>
+    </section>
+    <section class="section" id="price-comparison">
+        <div class="section-heading">
+            <div>
+                <h2>Compare Prices</h2>
+                <p>Compare saved offers for our products.</p>
+            </div>
+        </div>
+
+        <p class="status" id="comparison-status" role="status">
+            Select a product to compare prices.
+        </p>
+
+        <p class="demo-price-note">
+            Note: Displayed comparison prices are demo values and may not
+            reflect current marketplace prices. View Offer links may open
+            marketplace searches or category pages rather than an exact product.
+        </p>
+
+        <div id="comparison-results">
+            <div class="empty-state">
+                Select a product from the collection to see available offers.
+            </div>
+        </div>
+    </section>
 
     <section class="section" id="cart">
         <div class="section-heading">
@@ -422,6 +553,7 @@
                 <h2>My Cart</h2>
                 <p>Review your selected products.</p>
             </div>
+
             <button class="button" id="refresh-cart" type="button">
                 Refresh Cart
             </button>
@@ -432,9 +564,7 @@
         </p>
 
         <div id="cart-items">
-            <div class="empty-state">
-                Your cart will appear here.
-            </div>
+            <div class="empty-state">Your cart will appear here.</div>
         </div>
 
         <h3 id="cart-total">Total: ₹0.00</h3>
@@ -444,9 +574,7 @@
         </button>
 
         <p class="status" id="checkout-status" role="status"></p>
-
     </section>
-
 
     <section class="section" id="orders">
         <div class="section-heading">
@@ -465,13 +593,9 @@
         </p>
 
         <div id="orders-list">
-            <div class="empty-state">
-                Your orders will appear here.
-            </div>
+            <div class="empty-state">Your orders will appear here.</div>
         </div>
     </section>
-
-
 </main>
 
 <footer>
@@ -479,9 +603,248 @@
 </footer>
 
 <script>
-
     const productGrid = document.getElementById("product-grid");
     const productStatus = document.getElementById("product-status");
+
+
+    const wishlistItems = document.getElementById("wishlist-items");
+    const wishlistStatus = document.getElementById("wishlist-status");
+    const wishlistCount = document.getElementById("wishlist-count");
+
+    let wishlistProductIds = new Set();
+
+    function updateProductWishlistButtons() {
+        document.querySelectorAll(".wishlist-button").forEach(button => {
+            const productId = Number(button.dataset.productId);
+            const isSaved = wishlistProductIds.has(productId);
+
+            button.textContent = isSaved
+                ? "♥ Added to Wishlist"
+                : "♡ Add to Wishlist";
+
+            button.disabled = isSaved;
+        });
+    }
+
+    function updateWishlistCount(count) {
+        wishlistCount.textContent = count;
+    }
+
+    async function loadWishlist() {
+        const token = sessionStorage.getItem("accessToken");
+
+        if (!token) {
+            wishlistStatus.textContent =
+                "Please log in to view your wishlist.";
+            wishlistItems.replaceChildren();
+            wishlistProductIds.clear();
+            updateWishlistCount(0);
+            updateProductWishlistButtons();
+            return;
+        }
+
+        wishlistStatus.textContent = "Loading your wishlist...";
+        wishlistItems.replaceChildren();
+
+        try {
+            const response = await fetch("/api/wishlist", {
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            });
+
+            if (response.status === 401) {
+                sessionStorage.removeItem("accessToken");
+                wishlistStatus.textContent = "Please log in again.";
+                wishlistItems.replaceChildren();
+                wishlistProductIds.clear();
+                updateWishlistCount(0);
+                updateProductWishlistButtons();
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error("Wishlist request failed: " + response.status);
+            }
+
+            const items = await response.json();
+
+            console.log("Wishlist API response:", items);
+
+            wishlistProductIds = new Set(
+                items.map(item => Number(item.productId))
+            );
+
+            updateWishlistCount(items.length);
+            updateProductWishlistButtons();
+
+            if (items.length === 0) {
+                wishlistStatus.textContent = "Your wishlist is empty.";
+
+                const message = document.createElement("div");
+                message.className = "empty-state";
+                message.textContent = "Save your favourite products here.";
+
+                wishlistItems.appendChild(message);
+                return;
+            }
+
+            wishlistStatus.textContent =
+                items.length + " saved product(s).";
+
+            items.forEach(item => {
+                const card = document.createElement("article");
+                card.className = "product-card";
+
+                const imageArea = document.createElement("div");
+                imageArea.className = "product-image";
+
+                if (item.imageUrl) {
+                    const image = document.createElement("img");
+                    image.src = item.imageUrl;
+                    image.alt = item.name || "Wishlist product";
+                    image.loading = "lazy";
+
+                    image.onerror = () => {
+                        image.remove();
+                        imageArea.textContent = "Image unavailable";
+                    };
+
+                    imageArea.appendChild(image);
+                } else {
+                    imageArea.textContent = "StyleSync Collection";
+                }
+
+                const info = document.createElement("div");
+                info.className = "product-info";
+
+                const name = document.createElement("h3");
+                name.textContent = item.name || "Unnamed product";
+
+                const brand = document.createElement("p");
+                brand.textContent = item.brand || "StyleSync";
+
+                const details = document.createElement("p");
+                details.textContent =
+                    "Size: " + (item.size || "Not specified") +
+                    " | Color: " + (item.color || "Not specified");
+
+                const price = document.createElement("div");
+                price.className = "price";
+                price.textContent = formatINR(item.price);
+
+                const removeButton = document.createElement("button");
+                removeButton.type = "button";
+                removeButton.className = "wishlist-remove-button";
+                removeButton.textContent = "Remove from Wishlist";
+
+                removeButton.addEventListener("click", async () => {
+                    removeButton.disabled = true;
+                    removeButton.textContent = "Removing...";
+
+                    try {
+                        await removeWishlistProduct(item.productId);
+                        await loadWishlist();
+                    } catch (error) {
+                        console.error(error);
+                        wishlistStatus.textContent = error.message;
+                        removeButton.disabled = false;
+                        removeButton.textContent = "Remove from Wishlist";
+                    }
+                });
+
+                info.append(name, brand, details, price, removeButton);
+                card.append(imageArea, info);
+                wishlistItems.appendChild(card);
+            });
+
+        } catch (error) {
+            console.error("Load wishlist error:", error);
+            wishlistStatus.textContent =
+                "Unable to load wishlist. Please try again.";
+        }
+    }
+
+    async function addWishlistProduct(productId) {
+        const token = sessionStorage.getItem("accessToken");
+
+        if (!token) {
+            window.location.href = "/login.html";
+            throw new Error("Please log in.");
+        }
+
+        const response = await fetch(
+            `/api/wishlist/${encodeURIComponent(productId)}`,
+            {
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            }
+        );
+
+        if (response.status === 401) {
+            sessionStorage.removeItem("accessToken");
+            window.location.href = "/login.html";
+            throw new Error("Please log in again.");
+        }
+
+        if (response.status === 409) {
+            throw new Error("This product is already in your wishlist.");
+        }
+
+        if (!response.ok) {
+            throw new Error("Could not add product: " + response.status);
+        }
+
+        return await response.json();
+    }
+
+    async function removeWishlistProduct(productId) {
+        const token = sessionStorage.getItem("accessToken");
+
+        if (!token) {
+            window.location.href = "/login.html";
+            throw new Error("Please log in.");
+        }
+
+        const response = await fetch(
+            `/api/wishlist/${encodeURIComponent(productId)}`,
+            {
+                method: "DELETE",
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            }
+        );
+
+        if (response.status === 401) {
+            sessionStorage.removeItem("accessToken");
+            window.location.href = "/login.html";
+            throw new Error("Please log in again.");
+        }
+
+        if (!response.ok) {
+            throw new Error("Could not remove product: " + response.status);
+        }
+    }
+
+    document.getElementById("refresh-wishlist")
+        .addEventListener("click", loadWishlist);
+
+    function formatINR(value) {
+        const amount = Number(value);
+
+        if (!Number.isFinite(amount)) {
+            return "Price unavailable";
+        }
+
+        return new Intl.NumberFormat("en-IN", {
+            style: "currency",
+            currency: "INR",
+            maximumFractionDigits: 2
+        }).format(amount);
+    }
 
     async function loadProducts() {
         productStatus.textContent = "Loading products...";
@@ -491,12 +854,14 @@
         if (!token) {
             productStatus.textContent =
                 "Please log in to view products.";
+
             productGrid.replaceChildren();
 
             const message = document.createElement("div");
             message.className = "empty-state";
             message.textContent =
                 "Log in to your StyleSync-AI account to load the catalog.";
+
             productGrid.appendChild(message);
             return;
         }
@@ -511,8 +876,16 @@
 
             if (response.status === 401) {
                 sessionStorage.removeItem("accessToken");
+
                 productStatus.textContent =
                     "Your login has expired. Please log in again.";
+
+                productGrid.replaceChildren();
+
+                const message = document.createElement("div");
+                message.className = "empty-state";
+                message.textContent = "Please log in again to view products.";
+                productGrid.appendChild(message);
                 return;
             }
 
@@ -525,16 +898,30 @@
 
             if (!Array.isArray(products) || products.length === 0) {
                 productStatus.textContent = "No products found.";
+
                 const message = document.createElement("div");
                 message.className = "empty-state";
                 message.textContent = "No products are available yet.";
+
                 productGrid.appendChild(message);
                 return;
             }
 
             const visibleProducts = products.filter(
-                product => !product.name?.toLowerCase().includes("rollback test")
+                product =>
+                    !product.name?.toLowerCase().includes("rollback test")
             );
+
+            if (visibleProducts.length === 0) {
+                productStatus.textContent = "No products found.";
+
+                const message = document.createElement("div");
+                message.className = "empty-state";
+                message.textContent = "No products are available yet.";
+
+                productGrid.appendChild(message);
+                return;
+            }
 
             visibleProducts.forEach(product => {
                 const card = document.createElement("article");
@@ -570,16 +957,7 @@
 
                 const price = document.createElement("div");
                 price.className = "price";
-
-                const amount = Number(product.price);
-                price.textContent = Number.isFinite(amount)
-                    ? new Intl.NumberFormat("en-IN", {
-                        style: "currency",
-                        currency: "INR",
-                        maximumFractionDigits: 2
-                    }).format(amount)
-                    : "Price unavailable";
-
+                price.textContent = formatINR(product.price);
 
                 const addToCartButton = document.createElement("button");
                 addToCartButton.textContent = "Add to Cart";
@@ -591,21 +969,21 @@
                     addToCartButton.textContent = "Adding...";
 
                     try {
-                        const token = sessionStorage.getItem("accessToken");
+                        const currentToken =
+                            sessionStorage.getItem("accessToken");
 
-                        if (!token) {
+                        if (!currentToken) {
                             window.location.href = "/login.html";
                             return;
                         }
 
                         let cartId = sessionStorage.getItem("cartId");
 
-                        // Create a cart if this user does not have one saved in this session.
                         if (!cartId) {
                             const createResponse = await fetch("/api/cart", {
                                 method: "POST",
                                 headers: {
-                                    "Authorization": "Bearer " + token
+                                    "Authorization": "Bearer " + currentToken
                                 }
                             });
 
@@ -616,14 +994,19 @@
                             }
 
                             if (!createResponse.ok) {
-                                throw new Error("Could not create cart: " + createResponse.status);
+                                throw new Error(
+                                    "Could not create cart: " +
+                                    createResponse.status
+                                );
                             }
 
                             const cart = await createResponse.json();
                             cartId = cart.id;
 
                             if (cartId == null) {
-                                throw new Error("Cart ID was not returned by the server.");
+                                throw new Error(
+                                    "Cart ID was not returned by the server."
+                                );
                             }
 
                             sessionStorage.setItem("cartId", String(cartId));
@@ -635,7 +1018,7 @@
                                 method: "POST",
                                 headers: {
                                     "Content-Type": "application/json",
-                                    "Authorization": "Bearer " + token
+                                    "Authorization": "Bearer " + currentToken
                                 },
                                 body: JSON.stringify({
                                     productId: product.id,
@@ -653,7 +1036,11 @@
 
                         if (!addResponse.ok) {
                             const errorText = await addResponse.text();
-                            throw new Error(errorText || "Could not add product: " + addResponse.status);
+
+                            throw new Error(
+                                errorText ||
+                                "Could not add product: " + addResponse.status
+                            );
                         }
 
                         await addResponse.json();
@@ -662,16 +1049,215 @@
                     } catch (error) {
                         console.error("Add to cart error:", error);
                         addToCartButton.textContent = "Try Again";
-                        alert("Could not add this product to your cart. Please try again.");
+
+                        alert(
+                            "Could not add this product to your cart. " +
+                            "Please try again."
+                        );
                     } finally {
                         addToCartButton.disabled = false;
                     }
                 });
 
-                info.append(name, brand, price, addToCartButton);
+                const compareButton = document.createElement("button");
+
+                const wishlistButton = document.createElement("button");
+                wishlistButton.type = "button";
+                wishlistButton.className = "wishlist-button";
+                wishlistButton.dataset.productId = product.id;
+
+                const isWishlisted = wishlistProductIds.has(Number(product.id));
+
+                wishlistButton.textContent = isWishlisted
+                    ? "♥ Added to Wishlist"
+                    : "♡ Add to Wishlist";
+
+                wishlistButton.disabled = isWishlisted;
+
+                wishlistButton.addEventListener("click", async () => {
+                    if (wishlistProductIds.has(Number(product.id))) {
+                        return;
+                    }
+
+                    wishlistButton.disabled = true;
+                    wishlistButton.textContent = "Saving...";
+
+                    try {
+                        await addWishlistProduct(product.id);
+
+                        wishlistProductIds.add(Number(product.id));
+                        updateProductWishlistButtons();
+
+                        await loadWishlist();
+
+                    } catch (error) {
+                        console.error("Add to wishlist error:", error);
+
+                        alert(
+                            error.message ||
+                            "Could not add product to wishlist."
+                        );
+                    } finally {
+                        updateProductWishlistButtons();
+                    }
+                });
+                compareButton.type = "button";
+                compareButton.className = "button";
+                compareButton.textContent = "Compare Prices";
+
+                compareButton.addEventListener("click", async () => {
+                    const currentToken =
+                        sessionStorage.getItem("accessToken");
+
+                    const status =
+                        document.getElementById("comparison-status");
+
+                    const results =
+                        document.getElementById("comparison-results");
+
+                    if (!currentToken) {
+                        window.location.href = "/login.html";
+                        return;
+                    }
+
+                    compareButton.disabled = true;
+                    status.textContent = "Loading price offers...";
+                    results.replaceChildren();
+
+                    try {
+                        const response = await fetch(
+                            `/api/price-comparison/${encodeURIComponent(product.id)}`,
+                            {
+                                method: "GET",
+                                headers: {
+                                    "Authorization": "Bearer " + currentToken
+                                }
+                            }
+                        );
+
+                        if (response.status === 401) {
+                            sessionStorage.removeItem("accessToken");
+                            window.location.href = "/login.html";
+                            return;
+                        }
+
+                        if (!response.ok) {
+                            throw new Error(
+                                "Request failed: " + response.status
+                            );
+                        }
+
+                        const offers = await response.json();
+
+                        if (!Array.isArray(offers) || offers.length === 0) {
+                            status.textContent =
+                                "No saved offers are available for this product.";
+
+                            const message = document.createElement("div");
+                            message.className = "empty-state";
+                            message.textContent = "No price offers found yet.";
+
+                            results.appendChild(message);
+                        } else {
+                            status.textContent =
+                                offers.length + " saved offer(s) found for " +
+                                product.name + ".";
+
+                            offers.forEach(offer => {
+                                const card = document.createElement("article");
+                                card.className =
+                                    "product-card comparison-card";
+
+                                const platform = document.createElement("h3");
+                                platform.textContent =
+                                    offer.platform || "Marketplace";
+
+                                const productName = document.createElement("p");
+                                productName.textContent =
+                                    offer.productName || product.name;
+
+                                const priceText = document.createElement("p");
+                                priceText.className = "price";
+                                priceText.textContent = formatINR(offer.price);
+
+                                const demoLabel = document.createElement("p");
+                                demoLabel.className = "demo-price-note";
+                                demoLabel.textContent =
+                                    "Demo price — not a verified live price.";
+
+                                card.append(
+                                    platform,
+                                    productName,
+                                    priceText,
+                                    demoLabel
+                                );
+
+                                if (offer.productUrl) {
+                                    try {
+                                        const offerURL = new URL(
+                                            offer.productUrl,
+                                            window.location.origin
+                                        );
+
+                                        if (
+                                            offerURL.protocol === "https:" ||
+                                            offerURL.protocol === "http:"
+                                        ) {
+                                            const link =
+                                                document.createElement("a");
+
+                                            link.href = offerURL.href;
+                                            link.target = "_blank";
+                                            link.rel =
+                                                "noopener noreferrer";
+                                            link.textContent = "View Offer";
+                                            link.className = "button";
+
+                                            card.appendChild(link);
+                                        }
+                                    } catch (urlError) {
+                                        console.warn(
+                                            "Invalid offer URL:",
+                                            offer.productUrl
+                                        );
+                                    }
+                                }
+
+                                results.appendChild(card);
+                            });
+                        }
+
+                        document.getElementById("price-comparison")
+                            .scrollIntoView({ behavior: "smooth" });
+
+                    } catch (error) {
+                        console.error("Price comparison error:", error);
+
+                        status.textContent =
+                            "Unable to load price offers. Please try again.";
+
+                        const message = document.createElement("div");
+                        message.className = "empty-state";
+                        message.textContent =
+                            "Could not load price offers. Please try again.";
+
+                        results.replaceChildren(message);
+                    } finally {
+                        compareButton.disabled = false;
+                    }
+                });
+
+                info.append(
+                    name,
+                    brand,
+                    price,
+                    addToCartButton,
+                    wishlistButton,
+                    compareButton
+                );
+
                 card.append(imageArea, info);
                 productGrid.appendChild(card);
-
             });
 
             productStatus.textContent =
@@ -679,6 +1265,7 @@
 
         } catch (error) {
             console.error("Product catalog error:", error);
+
             productStatus.textContent =
                 "Unable to load products. Please try again.";
 
@@ -686,12 +1273,11 @@
 
             const message = document.createElement("div");
             message.className = "empty-state";
-            message.textContent =
-                "Could not load the product catalog.";
+            message.textContent = "Could not load the product catalog.";
+
             productGrid.appendChild(message);
         }
     }
-    loadProducts();
 
     async function loadCart() {
         const cartItems = document.getElementById("cart-items");
@@ -711,13 +1297,14 @@
         if (!cartId) {
             cartStatus.textContent =
                 "No cart ID found. Add a product to create your cart.";
+
             cartItems.replaceChildren();
 
             const message = document.createElement("div");
             message.className = "empty-state";
             message.textContent = "Your cart is empty.";
-            cartItems.appendChild(message);
 
+            cartItems.appendChild(message);
             cartTotal.textContent = "Total: ₹0.00";
             return;
         }
@@ -739,7 +1326,12 @@
             if (response.status === 401) {
                 sessionStorage.removeItem("accessToken");
                 sessionStorage.removeItem("cartId");
-                cartStatus.textContent = "Your login has expired. Please log in again.";
+
+                cartStatus.textContent =
+                    "Your login has expired. Please log in again.";
+
+                cartItems.replaceChildren();
+                cartTotal.textContent = "Total: ₹0.00";
                 return;
             }
 
@@ -754,11 +1346,13 @@
 
                 const message = document.createElement("div");
                 message.className = "empty-state";
-                message.textContent = "Add a product from the collection to get started.";
+                message.textContent =
+                    "Add a product from the collection to get started.";
+
                 cartItems.appendChild(message);
             } else {
-                cartStatus.textContent = cart.items.length + " cart item(s).";
-
+                cartStatus.textContent =
+                    cart.items.length + " cart item(s).";
 
                 cart.items.forEach(item => {
                     const row = document.createElement("div");
@@ -771,13 +1365,16 @@
 
                     const details = document.createElement("p");
                     details.textContent =
-                        "Price: ₹" + Number(item.product?.price).toFixed(2);
+                        "Price: " + formatINR(item.product?.price);
 
                     const subtotal = document.createElement("p");
                     subtotal.className = "price";
                     subtotal.textContent =
-                        "Subtotal: ₹" +
-                        (Number(item.product?.price) * Number(item.quantity)).toFixed(2);
+                        "Subtotal: " +
+                        formatINR(
+                            Number(item.product?.price) *
+                            Number(item.quantity)
+                        );
 
                     const actions = document.createElement("div");
                     actions.className = "cart-actions";
@@ -787,7 +1384,8 @@
                     decreaseButton.textContent = "−";
 
                     const quantityLabel = document.createElement("span");
-                    quantityLabel.textContent = "Quantity: " + item.quantity;
+                    quantityLabel.textContent =
+                        "Quantity: " + item.quantity;
 
                     const increaseButton = document.createElement("button");
                     increaseButton.type = "button";
@@ -806,11 +1404,12 @@
                         decreaseButton.disabled = true;
                         increaseButton.disabled = true;
                         removeButton.disabled = true;
+
                         cartStatus.textContent = "Updating cart...";
 
                         try {
-                            const response = await fetch(
-                                `/api/cart/${encodeURIComponent(cartId)}/items/${encodeURIComponent(item.product.id)}?quantity=${newQuantity}`,
+                            const updateResponse = await fetch(
+                                `/api/cart/${encodeURIComponent(cartId)}/items/${encodeURIComponent(item.product.id)}?quantity=${encodeURIComponent(newQuantity)}`,
                                 {
                                     method: "PUT",
                                     headers: {
@@ -819,23 +1418,29 @@
                                 }
                             );
 
-                            if (response.status === 401) {
+                            if (updateResponse.status === 401) {
                                 sessionStorage.removeItem("accessToken");
                                 sessionStorage.removeItem("cartId");
                                 window.location.href = "/login.html";
                                 return;
                             }
 
-                            if (!response.ok) {
-                                throw new Error("Could not update quantity: " + response.status);
+                            if (!updateResponse.ok) {
+                                throw new Error(
+                                    "Could not update quantity: " +
+                                    updateResponse.status
+                                );
                             }
 
-                            await response.json();
+                            await updateResponse.json();
                             await loadCart();
+
                         } catch (error) {
                             console.error("Update quantity error:", error);
+
                             cartStatus.textContent =
                                 "Could not update quantity. Please try again.";
+
                             decreaseButton.disabled = false;
                             increaseButton.disabled = false;
                             removeButton.disabled = false;
@@ -854,10 +1459,11 @@
                         decreaseButton.disabled = true;
                         increaseButton.disabled = true;
                         removeButton.disabled = true;
+
                         cartStatus.textContent = "Removing product...";
 
                         try {
-                            const response = await fetch(
+                            const removeResponse = await fetch(
                                 `/api/cart/${encodeURIComponent(cartId)}/items/${encodeURIComponent(item.product.id)}`,
                                 {
                                     method: "DELETE",
@@ -867,23 +1473,29 @@
                                 }
                             );
 
-                            if (response.status === 401) {
+                            if (removeResponse.status === 401) {
                                 sessionStorage.removeItem("accessToken");
                                 sessionStorage.removeItem("cartId");
                                 window.location.href = "/login.html";
                                 return;
                             }
 
-                            if (!response.ok) {
-                                throw new Error("Could not remove product: " + response.status);
+                            if (!removeResponse.ok) {
+                                throw new Error(
+                                    "Could not remove product: " +
+                                    removeResponse.status
+                                );
                             }
 
-                            await response.json();
+                            await removeResponse.json();
                             await loadCart();
+
                         } catch (error) {
                             console.error("Remove product error:", error);
+
                             cartStatus.textContent =
                                 "Could not remove product. Please try again.";
+
                             decreaseButton.disabled = false;
                             increaseButton.disabled = false;
                             removeButton.disabled = false;
@@ -900,86 +1512,92 @@
                     row.append(name, details, subtotal, actions);
                     cartItems.appendChild(row);
                 });
-
             }
 
             cartTotal.textContent =
-                "Total: ₹" + Number(cart.totalPrice || 0).toFixed(2);
+                "Total: " + formatINR(cart.totalPrice || 0);
 
         } catch (error) {
             console.error("Load cart error:", error);
+
             cartStatus.textContent =
                 "Unable to load your cart. Please try again.";
         }
     }
 
-    document.getElementById("refresh-cart").addEventListener("click", loadCart);
+    document.getElementById("refresh-cart")
+        .addEventListener("click", loadCart);
 
-    document.getElementById("checkout-button").addEventListener("click", async () => {
-        const checkoutButton = document.getElementById("checkout-button");
-        const checkoutStatus = document.getElementById("checkout-status");
+    document.getElementById("checkout-button")
+        .addEventListener("click", async () => {
+            const checkoutButton =
+                document.getElementById("checkout-button");
 
-        const token = sessionStorage.getItem("accessToken");
-        const cartId = sessionStorage.getItem("cartId");
+            const checkoutStatus =
+                document.getElementById("checkout-status");
 
-        if (!token) {
-            window.location.href = "/login.html";
-            return;
-        }
+            const token = sessionStorage.getItem("accessToken");
+            const cartId = sessionStorage.getItem("cartId");
 
-        if (!cartId) {
-            checkoutStatus.textContent =
-                "Your cart is empty. Add a product before checkout.";
-            return;
-        }
-
-        checkoutButton.disabled = true;
-        checkoutButton.textContent = "Placing Order...";
-        checkoutStatus.textContent = "Processing your order...";
-
-        try {
-            const response = await fetch(
-                `/api/orders/from-cart/${encodeURIComponent(cartId)}`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Authorization": "Bearer " + token
-                    }
-                }
-            );
-
-            if (response.status === 401) {
-                sessionStorage.removeItem("accessToken");
-                sessionStorage.removeItem("cartId");
+            if (!token) {
                 window.location.href = "/login.html";
                 return;
             }
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(
-                    errorText || "Checkout failed: " + response.status
-                );
+            if (!cartId) {
+                checkoutStatus.textContent =
+                    "Your cart is empty. Add a product before checkout.";
+                return;
             }
 
-            const order = await response.json();
+            checkoutButton.disabled = true;
+            checkoutButton.textContent = "Placing Order...";
+            checkoutStatus.textContent = "Processing your order...";
 
-            checkoutStatus.textContent = order.id != null
-                ? `Order placed successfully! Order ID: ${order.id}`
-                : "Order placed successfully!";
+            try {
+                const response = await fetch(
+                    `/api/orders/cod/${encodeURIComponent(cartId)}`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Authorization": "Bearer " + token
+                        }
+                    }
+                );
 
-            await loadCart();
+                if (response.status === 401) {
+                    sessionStorage.removeItem("accessToken");
+                    sessionStorage.removeItem("cartId");
+                    window.location.href = "/login.html";
+                    return;
+                }
 
-        } catch (error) {
-            console.error("Checkout error:", error);
-            checkoutStatus.textContent =
-                "Could not place your order. " + error.message;
-        } finally {
-            checkoutButton.disabled = false;
-            checkoutButton.textContent = "Proceed to Checkout";
-        }
-    });
+                if (!response.ok) {
+                    const errorText = await response.text();
 
+                    throw new Error(
+                        errorText || "Checkout failed: " + response.status
+                    );
+                }
+
+                const order = await response.json();
+
+                checkoutStatus.textContent = order.id != null
+                    ? `Order placed successfully! Order ID: ${order.id}`
+                    : "Order placed successfully!";
+
+                await loadCart();
+
+            } catch (error) {
+                console.error("Checkout error:", error);
+
+                checkoutStatus.textContent =
+                    "Could not place your order. " + error.message;
+            } finally {
+                checkoutButton.disabled = false;
+                checkoutButton.textContent = "Proceed to Checkout";
+            }
+        });
 
     async function loadOrders() {
         const ordersList = document.getElementById("orders-list");
@@ -988,7 +1606,9 @@
         const token = sessionStorage.getItem("accessToken");
 
         if (!token) {
-            ordersStatus.textContent = "Please log in to view your orders.";
+            ordersStatus.textContent =
+                "Please log in to view your orders.";
+
             ordersList.replaceChildren();
             return;
         }
@@ -1012,22 +1632,28 @@
             }
 
             if (!response.ok) {
-                throw new Error("Could not load orders: " + response.status);
+                throw new Error(
+                    "Could not load orders: " + response.status
+                );
             }
 
             const orders = await response.json();
 
             if (!Array.isArray(orders) || orders.length === 0) {
-                ordersStatus.textContent = "You haven't placed any orders yet.";
+                ordersStatus.textContent =
+                    "You haven't placed any orders yet.";
 
                 const message = document.createElement("div");
                 message.className = "empty-state";
-                message.textContent = "Your orders will appear here after checkout.";
+                message.textContent =
+                    "Your orders will appear here after checkout.";
+
                 ordersList.appendChild(message);
                 return;
             }
 
-            ordersStatus.textContent = orders.length + " order(s) found.";
+            ordersStatus.textContent =
+                orders.length + " order(s) found.";
 
             orders.forEach(order => {
                 const card = document.createElement("div");
@@ -1052,11 +1678,14 @@
 
                 (order.items || []).forEach(item => {
                     const listItem = document.createElement("li");
+
                     listItem.textContent =
                         item.productName +
                         " — Quantity: " + item.quantity +
-                        " — ₹" +
-                        (Number(item.price) * Number(item.quantity)).toFixed(2);
+                        " — " +
+                        formatINR(
+                            Number(item.price) * Number(item.quantity)
+                        );
 
                     itemsList.appendChild(listItem);
                 });
@@ -1064,7 +1693,7 @@
                 const total = document.createElement("p");
                 total.className = "price";
                 total.textContent =
-                    "Total: ₹" + Number(order.totalAmount).toFixed(2);
+                    "Total: " + formatINR(order.totalAmount);
 
                 card.append(
                     heading,
@@ -1080,6 +1709,7 @@
 
         } catch (error) {
             console.error("Load orders error:", error);
+
             ordersStatus.textContent =
                 "Unable to load your orders. Please try again.";
         }
@@ -1088,6 +1718,12 @@
     document.getElementById("refresh-orders")
         .addEventListener("click", loadOrders);
 
+    async function initializePage() {
+        await loadWishlist();
+        await loadProducts();
+    }
+
+    initializePage();
 </script>
 </body>
 </html>
