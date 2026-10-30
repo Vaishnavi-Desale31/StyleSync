@@ -274,6 +274,27 @@
             cursor: not-allowed;
         }
 
+        .buy-now-button {
+            margin-top: 20px;
+            margin-left: 10px;
+            padding: 14px 24px;
+            border: 0;
+            border-radius: 4px;
+            background: var(--accent);
+            color: var(--white);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .buy-now-button:hover {
+            background: var(--ink);
+        }
+
+        .buy-now-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .demo-price-note {
             color: var(--muted);
             font-size: 12px;
@@ -1059,6 +1080,83 @@
                     }
                 });
 
+                const buyNowButton = document.createElement("button");
+                buyNowButton.type = "button";
+                buyNowButton.className = "buy-now-button";
+                buyNowButton.textContent = "Buy Now";
+
+                buyNowButton.addEventListener("click", async () => {
+                    const token = sessionStorage.getItem("accessToken");
+
+                    if (!token) {
+                        window.location.href = "/login.html";
+                        return;
+                    }
+
+                    const confirmed = confirm(
+                        "Buy \"" + product.name + "\" for " +
+                        formatINR(product.price) +
+                        " (Cash on Delivery)?"
+                    );
+
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    buyNowButton.disabled = true;
+                    buyNowButton.textContent = "Placing order...";
+
+                    try {
+                        const response = await fetch("/api/orders/buy-now", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Authorization": "Bearer " + token
+                            },
+                            body: JSON.stringify({
+                                productId: product.id,
+                                quantity: 1
+                            })
+                        });
+
+                        if (response.status === 401) {
+                            sessionStorage.removeItem("accessToken");
+                            window.location.href = "/login.html";
+                            return;
+                        }
+
+                        if (!response.ok) {
+                            throw new Error(
+                                "Could not place order: " + response.status
+                            );
+                        }
+
+                        const order = await response.json();
+
+                        alert("Order placed! Order ID: " + order.id);
+
+                        await loadOrders();
+
+                        const ordersSection =
+                            document.getElementById("orders");
+
+                        if (ordersSection) {
+                            ordersSection.scrollIntoView({
+                                behavior: "smooth"
+                            });
+                        }
+                    } catch (error) {
+                        console.error("Buy now error:", error);
+                        alert(
+                            "Could not place your order. " +
+                            "Please try again."
+                        );
+                    } finally {
+                        buyNowButton.disabled = false;
+                        buyNowButton.textContent = "Buy Now";
+                    }
+                });
+
                 const compareButton = document.createElement("button");
 
                 const wishlistButton = document.createElement("button");
@@ -1252,6 +1350,7 @@
                     brand,
                     price,
                     addToCartButton,
+                    buyNowButton,
                     wishlistButton,
                     compareButton
                 );

@@ -1,6 +1,7 @@
 package com.project.stylesync_ai.controller;
 
 
+import com.project.stylesync_ai.dto.BuyNowRequest;
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.service.OrderService;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,17 @@ public class OrderController {
             Authentication authentication) {
         return orderService.createCodOrderFromCart(
                 cartId,
+                authentication.getName());
+    }
+
+    @PostMapping("/buy-now")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Order buyNow(
+            @RequestBody BuyNowRequest request,
+            Authentication authentication) {
+        return orderService.createCodOrderForProduct(
+                request.getProductId(),
+                request.getQuantity(),
                 authentication.getName());
     }
 

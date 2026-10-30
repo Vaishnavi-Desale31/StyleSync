@@ -8,6 +8,8 @@ import com.project.stylesync_ai.entity.Product;
 import com.project.stylesync_ai.entity.User;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.OrderRepository;
+import com.project.stylesync_ai.repository.ProductRepository;
+import com.project.stylesync_ai.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,6 +34,12 @@ class OrderServiceTest {
 
     @Mock
     private CartRepository cartRepository;
+
+    @Mock
+    private ProductRepository productRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private OrderService orderService;
@@ -101,7 +109,7 @@ class OrderServiceTest {
         verify(cartRepository, never()).save(any(Cart.class));
     }
 
-   //3. Checkout must reject a cart that the authenticated user does not own
+    //3. Checkout must reject a cart that the authenticated user does not own
     @Test
     void createOrderFromCart_shouldRejectCartOwnedByAnotherUser() {
         String anotherUserEmail = "another@example.com";
@@ -462,5 +470,80 @@ class OrderServiceTest {
         assertTrue(result.isEmpty());
 
         verify(orderRepository).findAllByUser_Email(TEST_EMAIL);
+    }
+
+    // ---------- Buy Now ----------
+
+    @Test
+    void createCodOrderForProduct_shouldUseDatabasePriceAndNotTouchCart() {
+        User user = createTestUser();
+        Product product = mock(Product.class);
+
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(productRepository.findById(2L)).thenReturn(Optional.of(product));
+        when(product.getId()).thenReturn(2L);
+        when(product.getName()).thenReturn("Premium Black T-Shirt");
+        when(product.getPrice()).thenReturn(799.0);
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Order result = orderService.createCodOrderForProduct(2L, 3, TEST_EMAIL);
+
+        assertEquals("PLACED", result.getStatus());
+        assertEquals("COD", result.getPaymentMethod());
+        assertEquals("PENDING", result.getPaymentStatus());
+        assertEquals(2397.0, result.getTotalAmount(), 0.001);
+        assertSame(user, result.getUser());
+        assertEquals(1, result.getItems().size());
+
+        OrderItem item = result.getItems().get(0);
+        assertEquals(2L, item.getProductId());
+        assertEquals("Premium Black T-Shirt", item.getProductName());
+        assertEquals(3, item.getQuantity());
+        assertEquals(799.0, item.getPrice(), 0.001);
+        assertSame(result, item.getOrder());
+
+        verifyNoInteractions(cartRepository);
+    }
+
+    @Test
+    void createCodOrderForProduct_shouldRejectInvalidQuantity() {
+        for (Integer bad : new Integer[]{null, 0, -1}) {
+            ResponseStatusException ex = assertThrows(
+                    ResponseStatusException.class,
+                    () -> orderService.createCodOrderForProduct(2L, bad, TEST_EMAIL));
+            assertEquals(400, ex.getStatusCode().value());
+        }
+        verifyNoInteractions(orderRepository, cartRepository);
+    }
+
+    @Test
+    void createCodOrderForProduct_shouldReturn404WhenProductMissing() {
+        when(userRepository.findByEmail(TEST_EMAIL))
+                .thenReturn(Optional.of(createTestUser()));
+        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.createCodOrderForProduct(99L, 1, TEST_EMAIL));
+
+        assertEquals(404, ex.getStatusCode().value());
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void createCodOrderForProduct_shouldRejectProductWithoutPrice() {
+        Product product = mock(Product.class);
+        when(userRepository.findByEmail(TEST_EMAIL))
+                .thenReturn(Optional.of(createTestUser()));
+        when(productRepository.findById(2L)).thenReturn(Optional.of(product));
+        when(product.getPrice()).thenReturn(null);
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.createCodOrderForProduct(2L, 1, TEST_EMAIL));
+
+        assertEquals(400, ex.getStatusCode().value());
+        verify(orderRepository, never()).save(any());
     }
 }

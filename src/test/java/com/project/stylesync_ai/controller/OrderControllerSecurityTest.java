@@ -115,4 +115,40 @@ class OrderControllerSecurityTest {
         verify(orderService).createCodOrderFromCart(3L, email);
     }
 
+    @Test
+    void buyNow_shouldReturn401WhenTokenIsMissing() throws Exception {
+        mockMvc.perform(post("/api/orders/buy-now")
+                        .contentType("application/json")
+                        .content("{\"productId\":1,\"quantity\":1}"))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(orderService);
+    }
+
+    @Test
+    void buyNow_shouldUseAuthenticatedUsersEmail() throws Exception {
+        String email = "user@example.com";
+        String token = "valid-buy-now-token";
+
+        UserDetails userDetails = User.withUsername(email)
+                .password("password")
+                .authorities("ROLE_USER")
+                .build();
+
+        when(jwtConfig.extractUsername(token)).thenReturn(email);
+        when(userDetailsService.loadUserByUsername(email))
+                .thenReturn(userDetails);
+        when(jwtConfig.isTokenValid(token, userDetails)).thenReturn(true);
+        when(orderService.createCodOrderForProduct(5L, 2, email))
+                .thenReturn(new Order());
+
+        mockMvc.perform(post("/api/orders/buy-now")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content("{\"productId\":5,\"quantity\":2}"))
+                .andExpect(status().isCreated());
+
+        verify(orderService).createCodOrderForProduct(5L, 2, email);
+    }
+
 }
