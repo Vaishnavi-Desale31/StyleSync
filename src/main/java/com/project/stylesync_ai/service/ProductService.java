@@ -81,6 +81,16 @@ public class ProductService {
 
     }
 
+    // Customers can only see active products. Admins can see all.
+    public Product getVisibleProductById(Long id, boolean isAdmin){
+        Product product = getProductById(id);
+
+        if(!isAdmin && !product.isActive()){
+            throw new ResourceNotFoundException("Product not found with id:" + id);
+        }
+        return product;
+    }
+
     //Update a product and its category
     public Product updateProduct(Long id, ProductRequest request){
         Product existingProduct = getProductById(id);
