@@ -57,7 +57,7 @@ class ProductServiceTest {
         Product product = new Product();
         Page<Product> expectedPage = new PageImpl<>(List.of(product));
 
-        when(productRepository.findAll(pageable))
+        when(productRepository.findByActiveTrue(pageable))
                 .thenReturn(expectedPage);
 
         Page<Product> result =
@@ -65,14 +65,14 @@ class ProductServiceTest {
 
         assertEquals(1, result.getTotalElements());
         assertSame(product, result.getContent().get(0));
-        verify(productRepository).findAll(pageable);
+        verify(productRepository).findByActiveTrue(pageable);
     }
 
     @Test
     void shouldSortProductsInAscendingOrder() {
         Product product = new Product();
 
-        when(productRepository.findAll(any(Sort.class)))
+        when(productRepository.findByActiveTrue(any(Sort.class)))
                 .thenReturn(List.of(product));
 
         List<Product> result =
@@ -83,7 +83,7 @@ class ProductServiceTest {
         ArgumentCaptor<Sort> captor =
                 ArgumentCaptor.forClass(Sort.class);
 
-        verify(productRepository).findAll(captor.capture());
+        verify(productRepository).findByActiveTrue(captor.capture());
 
         assertEquals(
                 Sort.Direction.ASC,
@@ -93,7 +93,7 @@ class ProductServiceTest {
 
     @Test
     void shouldSortProductsInDescendingOrder() {
-        when(productRepository.findAll(any(Sort.class)))
+        when(productRepository.findByActiveTrue(any(Sort.class)))
                 .thenReturn(List.of());
 
         productService.getProductsSorted("price", "desc");
@@ -101,7 +101,7 @@ class ProductServiceTest {
         ArgumentCaptor<Sort> captor =
                 ArgumentCaptor.forClass(Sort.class);
 
-        verify(productRepository).findAll(captor.capture());
+        verify(productRepository).findByActiveTrue(captor.capture());
 
         assertEquals(
                 Sort.Direction.DESC,

@@ -1,5 +1,6 @@
 package com.project.stylesync_ai.entity;
 
+import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,12 +14,12 @@ public class OrderItemTest {
         item.setProductId(2L);
         item.setProductName("Premium Black T-Shirt");
         item.setQuantity(2);
-        item.setPrice(799.0);
+        item.setPrice(new BigDecimal("799.00"));
 
         assertEquals(2L,item.getProductId());
         assertEquals("Premium Black T-Shirt", item.getProductName());
         assertEquals(2, item.getQuantity());
-        assertEquals(799.0, item.getPrice(),0.001);
+        assertEquals(0, new BigDecimal("799.00").compareTo(item.getPrice()));
     }
 
     @Test

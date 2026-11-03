@@ -1,4 +1,5 @@
 package com.project.stylesync_ai.service;
+import java.math.BigDecimal;
 
 import com.project.stylesync_ai.entity.Cart;
 import com.project.stylesync_ai.entity.CartItem;
@@ -65,7 +66,7 @@ class OrderServiceTest {
 
         when(product.getId()).thenReturn(2L);
         when(product.getName()).thenReturn("Premium Black T-Shirt");
-        when(product.getPrice()).thenReturn(799.0);
+        when(product.getPrice()).thenReturn(new BigDecimal("799.00"));
 
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -75,7 +76,7 @@ class OrderServiceTest {
         assertNotNull(result);
         assertEquals("PLACED", result.getStatus());
         assertNotNull(result.getOrderDate());
-        assertEquals(1598.0, result.getTotalAmount(), 0.001);
+        assertEquals(0, new BigDecimal("1598.00").compareTo(result.getTotalAmount()));
         assertSame(user, result.getUser());
 
         assertEquals(1, result.getItems().size());
@@ -84,7 +85,7 @@ class OrderServiceTest {
         assertEquals(2L, item.getProductId());
         assertEquals("Premium Black T-Shirt", item.getProductName());
         assertEquals(2, item.getQuantity());
-        assertEquals(799.0, item.getPrice(), 0.001);
+        assertEquals(0, new BigDecimal("799.00").compareTo(item.getPrice()));
         assertSame(result, item.getOrder());
 
         verify(orderRepository).save(any(Order.class));
@@ -200,13 +201,13 @@ class OrderServiceTest {
         when(tshirtItem.getQuantity()).thenReturn(2);
         when(tshirt.getId()).thenReturn(2L);
         when(tshirt.getName()).thenReturn("Premium Black T-Shirt");
-        when(tshirt.getPrice()).thenReturn(799.0);
+        when(tshirt.getPrice()).thenReturn(new BigDecimal("799.00"));
 
         when(jeansItem.getProduct()).thenReturn(jeans);
         when(jeansItem.getQuantity()).thenReturn(1);
         when(jeans.getId()).thenReturn(3L);
         when(jeans.getName()).thenReturn("Jeans");
-        when(jeans.getPrice()).thenReturn(1299.0);
+        when(jeans.getPrice()).thenReturn(new BigDecimal("1299.00"));
 
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -214,7 +215,7 @@ class OrderServiceTest {
         Order result = orderService.createOrderFromCart(3L, TEST_EMAIL);
 
         // (2 * 799) + (1 * 1299) = 2897
-        assertEquals(2897.0, result.getTotalAmount(), 0.001);
+        assertEquals(0, new BigDecimal("2897.00").compareTo(result.getTotalAmount()));
         assertEquals(2, result.getItems().size());
 
         verify(orderRepository).save(any(Order.class));
@@ -236,7 +237,7 @@ class OrderServiceTest {
 
         when(product.getId()).thenReturn(2L);
         when(product.getName()).thenReturn("T-Shirt");
-        when(product.getPrice()).thenReturn(799.0);
+        when(product.getPrice()).thenReturn(new BigDecimal("799.00"));
 
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -264,7 +265,7 @@ class OrderServiceTest {
 
         when(product.getId()).thenReturn(2L);
         when(product.getName()).thenReturn("T-Shirt");
-        when(product.getPrice()).thenReturn(799.0);
+        when(product.getPrice()).thenReturn(new BigDecimal("799.00"));
 
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -294,15 +295,15 @@ class OrderServiceTest {
 
         when(product.getId()).thenReturn(2L);
         when(product.getName()).thenReturn("T-Shirt");
-        when(product.getPrice()).thenReturn(799.0);
+        when(product.getPrice()).thenReturn(new BigDecimal("799.00"));
 
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         Order result = orderService.createOrderFromCart(3L, TEST_EMAIL);
 
-        assertEquals(799.0, result.getItems().get(0).getPrice(), 0.001);
-        assertEquals(1598.0, result.getTotalAmount(), 0.001);
+        assertEquals(0, new BigDecimal("799.00").compareTo(result.getItems().get(0).getPrice()));
+        assertEquals(0, new BigDecimal("1598.00").compareTo(result.getTotalAmount()));
     }
 
     // 10. Cart is not cleared when saving the order fails
@@ -321,7 +322,7 @@ class OrderServiceTest {
 
         when(product.getId()).thenReturn(2L);
         when(product.getName()).thenReturn("T-Shirt");
-        when(product.getPrice()).thenReturn(799.0);
+        when(product.getPrice()).thenReturn(new BigDecimal("799.00"));
 
         when(orderRepository.save(any(Order.class)))
                 .thenThrow(new RuntimeException("Database save failed"));
@@ -353,7 +354,7 @@ class OrderServiceTest {
 
         when(product.getId()).thenReturn(2L);
         when(product.getName()).thenReturn("T-Shirt");
-        when(product.getPrice()).thenReturn(799.0);
+        when(product.getPrice()).thenReturn(new BigDecimal("799.00"));
 
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -390,7 +391,7 @@ class OrderServiceTest {
 
         when(product.getId()).thenReturn(2L);
         when(product.getName()).thenReturn("Premium Black T-Shirt");
-        when(product.getPrice()).thenReturn(799.0);
+        when(product.getPrice()).thenReturn(new BigDecimal("799.00"));
 
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -402,7 +403,7 @@ class OrderServiceTest {
         assertEquals("PLACED", result.getStatus());
         assertEquals("COD", result.getPaymentMethod());
         assertEquals("PENDING", result.getPaymentStatus());
-        assertEquals(1598.0, result.getTotalAmount(), 0.001);
+        assertEquals(0, new BigDecimal("1598.00").compareTo(result.getTotalAmount()));
 
         verify(orderRepository).save(any(Order.class));
         verify(cart).clearItems();
@@ -483,7 +484,7 @@ class OrderServiceTest {
         when(productRepository.findById(2L)).thenReturn(Optional.of(product));
         when(product.getId()).thenReturn(2L);
         when(product.getName()).thenReturn("Premium Black T-Shirt");
-        when(product.getPrice()).thenReturn(799.0);
+        when(product.getPrice()).thenReturn(new BigDecimal("799.00"));
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -492,7 +493,7 @@ class OrderServiceTest {
         assertEquals("PLACED", result.getStatus());
         assertEquals("COD", result.getPaymentMethod());
         assertEquals("PENDING", result.getPaymentStatus());
-        assertEquals(2397.0, result.getTotalAmount(), 0.001);
+        assertEquals(0, new BigDecimal("2397.00").compareTo(result.getTotalAmount()));
         assertSame(user, result.getUser());
         assertEquals(1, result.getItems().size());
 
@@ -500,7 +501,7 @@ class OrderServiceTest {
         assertEquals(2L, item.getProductId());
         assertEquals("Premium Black T-Shirt", item.getProductName());
         assertEquals(3, item.getQuantity());
-        assertEquals(799.0, item.getPrice(), 0.001);
+        assertEquals(0, new BigDecimal("799.00").compareTo(item.getPrice()));
         assertSame(result, item.getOrder());
 
         verifyNoInteractions(cartRepository);

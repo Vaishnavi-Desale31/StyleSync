@@ -86,6 +86,13 @@ public class PriceComparisonController {
         return priceComparisonService.compareProductPrices(productId);
     }
 
+    // Admin: list stored offers (with ids) for a product
+    @GetMapping("/{productId}/offers")
+    public List<com.project.stylesync_ai.dto.AdminOfferResponse> listOffers(
+            @PathVariable Long productId) {
+        return priceComparisonService.listOffers(productId);
+    }
+
     // Admin: create a price offer for a product
     @PostMapping("/{productId}/offers")
     public ResponseEntity<PriceOfferEntity> createOffer(

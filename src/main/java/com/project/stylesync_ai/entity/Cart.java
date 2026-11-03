@@ -2,6 +2,7 @@ package com.project.stylesync_ai.entity;
 
 import jakarta.persistence.*;
 import com.project.stylesync_ai.entity.User;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -51,7 +52,7 @@ public class Cart {
     }
 
     public void addItem(CartItem item){
-       items.add(item);
+        items.add(item);
         item.setCart(this);
     }
 
@@ -66,11 +67,12 @@ public class Cart {
         }
     }
 
-    public Double getTotalPrice(){
+    public BigDecimal getTotalPrice(){
         return items.stream()
-                .mapToDouble(item ->
-                        item.getProduct().getPrice() * item.getQuantity()
+                .map(item ->
+                        item.getProduct().getPrice()
+                                .multiply(BigDecimal.valueOf(item.getQuantity()))
                 )
-                .sum();
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

@@ -79,6 +79,7 @@ public class PriceComparisonService {
             PriceOfferRequest request) {
 
         validateProductId(productId);
+        validateOfferUrl(request.productUrl());
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -101,6 +102,7 @@ public class PriceComparisonService {
             PriceOfferRequest request) {
 
         validateOfferId(offerId);
+        validateOfferUrl(request.productUrl());
 
         PriceOfferEntity offer = priceRepository.findById(offerId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -127,6 +129,24 @@ public class PriceComparisonService {
         priceRepository.delete(offer);
     }
 
+    private void validateOfferUrl(String url) {
+        try {
+            java.net.URI uri = new java.net.URI(url.trim());
+
+            boolean httpUrl = uri.getHost() != null
+                    && ("https".equalsIgnoreCase(uri.getScheme())
+                    || "http".equalsIgnoreCase(uri.getScheme()));
+
+            if (!httpUrl) {
+                throw new IllegalArgumentException("not an http(s) URL");
+            }
+        } catch (Exception exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Product URL must be a valid http or https link");
+        }
+    }
+
     private void validateProductId(Long productId) {
         if (productId == null || productId <= 0) {
             throw new ResponseStatusException(
@@ -141,5 +161,18 @@ public class PriceComparisonService {
                     HttpStatus.BAD_REQUEST,
                     "Offer ID must be greater than zero");
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.project.stylesync_ai.dto.AdminOfferResponse> listOffers(
+            Long productId) {
+        return priceRepository.findByProduct_IdOrderByPriceAsc(productId)
+                .stream()
+                .map(offer -> new com.project.stylesync_ai.dto.AdminOfferResponse(
+                        offer.getId(),
+                        offer.getPlatform(),
+                        offer.getPrice(),
+                        offer.getProductUrl()))
+                .toList();
     }
 }

@@ -1,5 +1,6 @@
 
 package com.project.stylesync_ai.entity;
+import java.math.BigDecimal;
 
 import org.junit.jupiter.api.Test;
 
@@ -17,11 +18,11 @@ class OrderTest {
 
         order.setOrderDate(now);
         order.setStatus("PLACED");
-        order.setTotalAmount(1598.0);
+        order.setTotalAmount(new BigDecimal("1598.00"));
 
         assertEquals(now, order.getOrderDate());
         assertEquals("PLACED", order.getStatus());
-        assertEquals(1598.0, order.getTotalAmount(), 0.001);
+        assertEquals(0, new BigDecimal("1598.00").compareTo(order.getTotalAmount()));
     }
 
     @Test

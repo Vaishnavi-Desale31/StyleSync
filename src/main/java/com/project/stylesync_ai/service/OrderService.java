@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,7 +84,7 @@ public class OrderService {
             order.setPaymentStatus(paymentStatus);
         }
 
-        double totalAmount = 0.0;
+        BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
 
         for (CartItem cartItem : cart.getItems()) {
@@ -94,13 +96,15 @@ public class OrderService {
             orderItem.setPrice(cartItem.getProduct().getPrice());
             orderItem.setOrder(order);
 
-            totalAmount += orderItem.getPrice()
-                    * cartItem.getQuantity();
+            totalAmount = totalAmount.add(
+                    orderItem.getPrice().multiply(
+                            BigDecimal.valueOf(cartItem.getQuantity())));
 
             orderItems.add(orderItem);
         }
 
-        order.setTotalAmount(totalAmount);
+        order.setTotalAmount(
+                totalAmount.setScale(2, RoundingMode.HALF_UP));
         order.setItems(orderItems);
 
         Order savedOrder = orderRepository.save(order);
@@ -111,11 +115,6 @@ public class OrderService {
         return savedOrder;
     }
 
-    /**
-     * Buy Now: creates a Cash on Delivery order for a single product.
-     * The price always comes from the database, never from the client,
-     * and the customer's cart is neither read nor modified.
-     */
     @Transactional
     public Order createCodOrderForProduct(
             Long productId,
@@ -173,7 +172,10 @@ public class OrderService {
         orderItems.add(orderItem);
 
         order.setItems(orderItems);
-        order.setTotalAmount(product.getPrice() * quantity);
+        order.setTotalAmount(
+                product.getPrice()
+                        .multiply(BigDecimal.valueOf(quantity))
+                        .setScale(2, RoundingMode.HALF_UP));
 
         return orderRepository.save(order);
     }

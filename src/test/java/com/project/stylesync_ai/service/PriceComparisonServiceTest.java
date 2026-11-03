@@ -99,7 +99,7 @@ class PriceComparisonServiceTest {
     @Test
     void compareProductPrices_shouldReturnOffersForExistingProduct() {
         Product product = new Product(
-                "Black T-Shirt", "Cotton shirt", 799.0,
+                "Black T-Shirt", "Cotton shirt", new BigDecimal("799.00"),
                 "StyleSync", "image.jpg", "L", "Black", null
         );
 
@@ -134,7 +134,7 @@ class PriceComparisonServiceTest {
     @Test
     void compareProductPrices_shouldReturnEmptyListWhenNoOffersExist() {
         Product product = new Product(
-                "Black T-Shirt", "Cotton shirt", 799.0,
+                "Black T-Shirt", "Cotton shirt", new BigDecimal("799.00"),
                 "StyleSync", "image.jpg", "L", "Black", null
         );
 
