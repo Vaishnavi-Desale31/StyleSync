@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account | StyleSync AI</title>
+    <style>
+        :root { --ink:#222; --accent:#a45b45; --muted:#777; --line:#e6e2dc; --bg:#faf8f5; }
+        * { box-sizing: border-box; }
+        body { margin:0; font-family: Arial, sans-serif; background:var(--bg); color:var(--ink); }
+        header { display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
+            padding:16px 24px; background:#fff; border-bottom:1px solid var(--line); }
+        .logo { font-size:22px; font-weight:800; } .logo span { color:var(--accent); }
+        header a { color:var(--accent); text-decoration:none; font-size:14px; margin-left:14px; }
+        main { max-width:960px; margin:0 auto; padding:24px 16px 60px; }
+        section.panel { background:#fff; border:1px solid var(--line); border-radius:10px;
+            padding:20px; margin-bottom:22px; }
+        h2 { margin:0 0 14px; font-size:20px; } h3 { margin:16px 0 8px; font-size:16px; }
+        label { display:block; margin:12px 0 6px; font-size:13px; font-weight:700; }
+        input, select, textarea { width:100%; padding:10px; border:1px solid #d9d4cc; border-radius:5px; font-size:14px; background:#fff; }
+        .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+        button { padding:10px 16px; border:0; border-radius:5px; background:var(--ink); color:#fff;
+            font-size:14px; cursor:pointer; margin-top:14px; }
+        button:hover { background:var(--accent); } button:disabled { opacity:.6; cursor:not-allowed; }
+        button.secondary { background:#fff; color:var(--ink); border:1px solid #d9d4cc; }
+        button.danger { background:#b42318; }
+        button.small { padding:6px 10px; margin:4px 4px 0 0; font-size:13px; }
+        .status { min-height:20px; margin:10px 0 0; font-size:14px; color:var(--muted); overflow-wrap:anywhere; }
+        .status.error { color:#b42318; } .status.ok { color:#067647; }
+        .card { border:1px solid var(--line); border-radius:8px; padding:12px; margin-top:12px; }
+        .badge { display:inline-block; padding:2px 8px; border-radius:10px; background:#f1ece6; font-size:12px; }
+        table { width:100%; border-collapse:collapse; font-size:14px; }
+        th, td { text-align:left; padding:8px; border-bottom:1px solid var(--line); vertical-align:top; }
+        .tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+        .tabs button { margin:0; background:#fff; color:var(--ink); border:1px solid #d9d4cc; }
+        .tabs button.active { background:var(--ink); color:#fff; }
+        .scroll { overflow-x:auto; }
+        @media (max-width:640px) { .grid2 { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo">StyleSync<span>AI</span></div>
+    <nav><a href="/">Shop</a><a href="/#orders">My Orders</a></nav>
+</header>
+
+<main>
+    <section class="panel">
+        <h2>Profile</h2>
+        <form id="profile-form">
+            <label for="profile-name">Name</label>
+            <input id="profile-name" maxlength="100" required>
+            <label for="profile-email">Email</label>
+            <input id="profile-email" disabled>
+            <button type="submit">Save Profile</button>
+        </form>
+        <p class="status" id="profile-status" role="status"></p>
+    </section>
+
+    <section class="panel">
+        <h2>Change Password</h2>
+        <form id="password-form">
+            <label for="current-password">Current password</label>
+            <input type="password" id="current-password" autocomplete="current-password" required>
+            <label for="new-password">New password (8 to 72 characters)</label>
+            <input type="password" id="new-password" autocomplete="new-password" minlength="8" maxlength="72" required>
+            <label for="confirm-password">Confirm new password</label>
+            <input type="password" id="confirm-password" autocomplete="new-password" minlength="8" maxlength="72" required>
+            <button type="submit">Change Password</button>
+        </form>
+        <p class="status" id="password-status" role="status"></p>
+    </section>
+
+    <section class="panel">
+        <h2>Delivery Addresses</h2>
+        <div id="address-list"></div>
+        <p class="status" id="address-list-status" role="status"></p>
+
+        <h3 id="address-form-title">Add a new address</h3>
+        <form id="address-form">
+            <input type="hidden" id="address-id">
+            <div class="grid2">
+                <div><label for="a-label">Label (Home, Work...)</label><input id="a-label" maxlength="50"></div>
+                <div><label for="a-name">Full name</label><input id="a-name" maxlength="100" required></div>
+                <div><label for="a-phone">Phone</label><input id="a-phone" maxlength="20" required></div>
+                <div><label for="a-postal">Postal code</label><input id="a-postal" maxlength="12" required></div>
+            </div>
+            <label for="a-line1">Address line 1</label><input id="a-line1" maxlength="200" required>
+            <label for="a-line2">Address line 2</label><input id="a-line2" maxlength="200">
+            <div class="grid2">
+                <div><label for="a-city">City</label><input id="a-city" maxlength="100" required></div>
+                <div><label for="a-state">State</label><input id="a-state" maxlength="100" required></div>
+            </div>
+            <label><input type="checkbox" id="a-default" style="width:auto"> Make this my default address</label>
+            <button type="submit" id="address-save">Save Address</button>
+            <button type="button" class="secondary" id="address-cancel" hidden>Cancel edit</button>
+        </form>
+        <p class="status" id="address-status" role="status"></p>
+    </section>
+</main>
+
+<script>
+    function errorText(data) {
+        if (!data || typeof data !== "object") { return ""; }
+        if (data.message) { return data.message; }
+        return Object.values(data).filter(v => typeof v === "string").join(" ");
+    }
+
+    async function api(path, options = {}) {
+        const token = sessionStorage.getItem("accessToken");
+
+        if (!token) {
+            window.location.href = "/login.html";
+            throw new Error("Please log in.");
+        }
+
+        const headers = Object.assign(
+            { "Authorization": "Bearer " + token }, options.headers || {});
+
+        if (options.body !== undefined) {
+            headers["Content-Type"] = "application/json";
+        }
+
+        const response = await fetch(path, {
+            method: options.method || "GET",
+            headers,
+            body: options.body === undefined
+                ? undefined : JSON.stringify(options.body)
+        });
+
+        if (response.status === 401) {
+            sessionStorage.removeItem("accessToken");
+            window.location.href = "/login.html";
+            throw new Error("Your session expired. Please log in again.");
+        }
+
+        if (response.status === 204) {
+            return null;
+        }
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+            if (response.status === 403) {
+                throw new Error("You do not have permission to do that.");
+            }
+            throw new Error(
+                errorText(data) || "Request failed: " + response.status);
+        }
+
+        return data;
+    }
+
+    function show(el, text, kind) {
+        el.textContent = text;
+        el.className = "status" + (kind ? " " + kind : "");
+    }
+
+    function formatINR(value) {
+        return new Intl.NumberFormat("en-IN",
+            { style: "currency", currency: "INR" }).format(Number(value) || 0);
+    }
+
+    function el(tag, text, className) {
+        const node = document.createElement(tag);
+        if (text !== undefined && text !== null) { node.textContent = text; }
+        if (className) { node.className = className; }
+        return node;
+    }
+
+    const profileStatus = document.getElementById("profile-status");
+    const passwordStatus = document.getElementById("password-status");
+    const addressStatus = document.getElementById("address-status");
+    const addressListStatus = document.getElementById("address-list-status");
+
+    async function loadProfile() {
+        try {
+            const profile = await api("/api/account/profile");
+            document.getElementById("profile-name").value = profile.name;
+            document.getElementById("profile-email").value = profile.email;
+        } catch (error) {
+            show(profileStatus, error.message, "error");
+        }
+    }
+
+    document.getElementById("profile-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        try {
+            await api("/api/account/profile", {
+                method: "PUT",
+                body: { name: document.getElementById("profile-name").value }
+            });
+            show(profileStatus, "Profile saved.", "ok");
+        } catch (error) {
+            show(profileStatus, error.message, "error");
+        }
+    });
+
+    document.getElementById("password-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        const newPassword = document.getElementById("new-password").value;
+
+        if (newPassword !== document.getElementById("confirm-password").value) {
+            show(passwordStatus, "The new passwords do not match.", "error");
+            return;
+        }
+
+        try {
+            await api("/api/account/password", {
+                method: "PUT",
+                body: {
+                    currentPassword: document.getElementById("current-password").value,
+                    newPassword: newPassword
+                }
+            });
+            event.target.reset();
+            show(passwordStatus, "Password changed.", "ok");
+        } catch (error) {
+            show(passwordStatus, error.message, "error");
+        }
+    });
+
+    const fieldIds = {
+        label: "a-label", fullName: "a-name", phone: "a-phone",
+        postalCode: "a-postal", line1: "a-line1", line2: "a-line2",
+        city: "a-city", state: "a-state"
+    };
+
+    function resetAddressForm() {
+        document.getElementById("address-form").reset();
+        document.getElementById("address-id").value = "";
+        document.getElementById("address-form-title").textContent = "Add a new address";
+        document.getElementById("address-cancel").hidden = true;
+    }
+
+    function editAddress(address) {
+        document.getElementById("address-id").value = address.id;
+        Object.entries(fieldIds).forEach(([key, id]) => {
+            document.getElementById(id).value = address[key] || "";
+        });
+        document.getElementById("a-default").checked = address.defaultAddress;
+        document.getElementById("address-form-title").textContent = "Edit address";
+        document.getElementById("address-cancel").hidden = false;
+        document.getElementById("address-form").scrollIntoView({ behavior: "smooth" });
+    }
+
+    async function loadAddresses() {
+        const list = document.getElementById("address-list");
+        list.replaceChildren();
+
+        try {
+            const addresses = await api("/api/account/addresses");
+
+            show(addressListStatus,
+                addresses.length ? "" : "You have no saved addresses yet.");
+
+            addresses.forEach(address => {
+                const card = el("div", null, "card");
+                const title = el("strong", (address.label || "Address") + " ");
+                if (address.defaultAddress) {
+                    title.appendChild(el("span", "Default", "badge"));
+                }
+                card.append(
+                    title,
+                    el("div", address.fullName + " · " + address.phone),
+                    el("div", [address.line1, address.line2].filter(Boolean).join(", ")),
+                    el("div", address.city + ", " + address.state + " " +
+                        address.postalCode + ", " + address.country)
+                );
+
+                const edit = el("button", "Edit", "secondary small");
+                edit.type = "button";
+                edit.addEventListener("click", () => editAddress(address));
+
+                const remove = el("button", "Delete", "danger small");
+                remove.type = "button";
+                remove.addEventListener("click", async () => {
+                    if (!confirm("Delete this address?")) { return; }
+                    try {
+                        await api("/api/account/addresses/" + address.id, { method: "DELETE" });
+                        await loadAddresses();
+                    } catch (error) {
+                        show(addressListStatus, error.message, "error");
+                    }
+                });
+
+                card.append(edit, remove);
+                list.appendChild(card);
+            });
+        } catch (error) {
+            show(addressListStatus, error.message, "error");
+        }
+    }
+
+    document.getElementById("address-form").addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const body = { country: "India",
+            defaultAddress: document.getElementById("a-default").checked };
+        Object.entries(fieldIds).forEach(([key, id]) => {
+            body[key] = document.getElementById(id).value;
+        });
+
+        const id = document.getElementById("address-id").value;
+
+        try {
+            await api(id ? "/api/account/addresses/" + id : "/api/account/addresses",
+                { method: id ? "PUT" : "POST", body });
+            resetAddressForm();
+            show(addressStatus, "Address saved.", "ok");
+            await loadAddresses();
+        } catch (error) {
+            show(addressStatus, error.message, "error");
+        }
+    });
+
+    document.getElementById("address-cancel").addEventListener("click", resetAddressForm);
+
+    loadProfile();
+    loadAddresses();
+</script>
+</body>
+</html>
