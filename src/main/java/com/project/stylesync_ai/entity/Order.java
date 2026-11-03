@@ -1,5 +1,5 @@
 package com.project.stylesync_ai.entity;
-
+import java.math.BigDecimal;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,7 +21,8 @@ public class Order{
 
     private LocalDateTime orderDate;
 
-    private Double totalAmount;
+    @Column(name = "total_amount", precision = 12, scale = 2)
+    private BigDecimal totalAmount;
 
     private String status;
 
@@ -122,13 +123,8 @@ public class Order{
         this.orderDate = orderDate;
     }
 
-    public Double getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(Double totalAmount) {
-        this.totalAmount = totalAmount;
-    }
+    public BigDecimal getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
 
     public String getStatus() {
         return status;

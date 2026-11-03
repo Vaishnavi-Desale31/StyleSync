@@ -61,6 +61,13 @@ public class CartService {
                         "Product not found"
                 ));
 
+        if (!product.isActive()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "This product is inactive and cannot be added to cart"
+            );
+        }
+
         for (CartItem item : cart.getItems()) {
             if (item.getProduct().getId().equals(productId)) {
                 item.setQuantity(item.getQuantity() + quantity);
@@ -100,6 +107,14 @@ public class CartService {
 
         for (CartItem item : cart.getItems()) {
             if (item.getProduct().getId().equals(productId)) {
+
+                if (!item.getProduct().isActive()) {
+                    throw new ResponseStatusException(
+                            HttpStatus.CONFLICT,
+                            "This product is inactive. Remove it from your cart."
+                    );
+                }
+
                 item.setQuantity(quantity);
                 return cartRepository.save(cart);
             }

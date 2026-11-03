@@ -54,9 +54,14 @@ public class ProductService {
         return productRepository.findAll();
     }
 
+    // Get only active products for customers
+    public List<Product> getActiveProducts(){
+        return productRepository.findByActiveTrue();
+    }
+
     //Get product with pagination
     public Page<Product> getProductsWithPagination(Pageable pageable){
-        return productRepository.findAll(pageable);
+        return productRepository.findByActiveTrue(pageable);
     }
 
     //Get all products sorted by a selected field and direction
@@ -64,7 +69,8 @@ public class ProductService {
         Sort sort = direction.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
-        return productRepository.findAll(sort);
+
+        return productRepository.findByActiveTrue(sort);
     }
 
     //Get a product by ID
@@ -108,13 +114,28 @@ public class ProductService {
         productRepository.delete(product);
     }
 
+    // Deactivate a product (Soft Delete)
+    public Product deactivateProduct(Long id){
+        Product product = getProductById(id);
+        product.setActive(false);
+        return productRepository.save(product);
+    }
+
+    // Reactivate a product
+    public Product reactivateProduct(Long id){
+        Product product = getProductById(id);
+        product.setActive(true);
+        return productRepository.save(product);
+    }
+
     //Search products by name
     public List<Product> searchProductsByName(String name){
-        return productRepository.findByNameContainingIgnoreCase(name);
+        return productRepository
+                .findByNameContainingIgnoreCaseAndActiveTrue(name);
     }
 
     //Get products by category ID
     public List<Product> getProductsByCategoryId(Long categoryId){
-        return productRepository.findByCategoryId(categoryId);
+        return productRepository.findByCategoryIdAndActiveTrue(categoryId);
     }
 }
