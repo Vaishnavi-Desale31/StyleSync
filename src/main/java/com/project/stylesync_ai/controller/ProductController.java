@@ -36,6 +36,12 @@ public class ProductController {
         return productService.getAllProducts();
     }
 
+    // Get only active products for customers
+    @GetMapping("/active")
+    public List<Product> getActiveProducts(){
+        return productService.getActiveProducts();
+    }
+
     // Get a product by ID
     @GetMapping("/{id}")
     public Product getProductById(@PathVariable Long id){
@@ -49,15 +55,20 @@ public class ProductController {
         return productService.updateProduct(id, request);
     }
 
-    // Delete a product
+    // Deactivate a product (Soft Delete)
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteProduct(@PathVariable Long id){
-      productService.deleteProduct(id);
+    public Product deactivateProduct(@PathVariable Long id){
+        return productService.deactivateProduct(id);
+    }
+
+    // Reactivate a product
+    @PatchMapping("/{id}/reactivate")
+    public Product reactivateProduct(@PathVariable Long id){
+        return productService.reactivateProduct(id);
     }
 
     // Search products by name
-@GetMapping("/search")
+    @GetMapping("/search")
     public List<Product> searchProducts(@RequestParam String name){
         return productService.searchProductsByName(name);
     }

@@ -1,5 +1,6 @@
 package com.project.stylesync_ai.entity;
 
+import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -10,14 +11,14 @@ public class CartTest {
     void getTotalPrice_shouldCalculateTotalForMultipleItems(){
 
         Product tshirt = new Product();
-        tshirt.setPrice(799.0);
+        tshirt.setPrice(new BigDecimal("799.00"));
 
         CartItem item1 = new CartItem();
         item1.setProduct(tshirt);
         item1.setQuantity(2);
 
         Product jeans = new Product();
-        jeans.setPrice(1299.0);
+        jeans.setPrice(new BigDecimal("1299.00"));
 
         CartItem item2 = new CartItem();
         item2.setProduct(jeans);
@@ -27,7 +28,7 @@ public class CartTest {
         cart.addItem(item1);
         cart.addItem(item2);
 
-        assertEquals(2897.0,cart.getTotalPrice(),0.01);
+        assertEquals(0, new BigDecimal("2897.00").compareTo(cart.getTotalPrice()));
     }
 
     @Test
@@ -35,14 +36,14 @@ public class CartTest {
 
         Cart cart = new Cart();
 
-        assertEquals(0.0,cart.getTotalPrice(),0.001);
+        assertEquals(0, new BigDecimal("0.00").compareTo(cart.getTotalPrice()));
     }
 
     @Test
     void getTotalPrice_shouldReturnProductPriceForQuantityOne(){
 
         Product product = new Product();
-        product.setPrice(799.0);
+        product.setPrice(new BigDecimal("799.00"));
 
         CartItem item1 = new CartItem();
         item1.setProduct(product);
@@ -51,7 +52,7 @@ public class CartTest {
         Cart cart = new Cart();
         cart.addItem(item1);
 
-        assertEquals(799.0,cart.getTotalPrice(),0.001);
+        assertEquals(0, new BigDecimal("799.00").compareTo(cart.getTotalPrice()));
 
     }
 
@@ -79,7 +80,7 @@ public class CartTest {
     void getTotalPrice_shouldUpdateWhenQuantityChanges(){
         //Arrange: add one product with quantity 1
         Product product = new Product();
-        product.setPrice(799.0);
+        product.setPrice(new BigDecimal("799.00"));
 
         CartItem item = new CartItem();
         item.setProduct(product);
@@ -88,12 +89,12 @@ public class CartTest {
         Cart cart = new Cart();
         cart.addItem(item);
 
-        assertEquals(799.0,cart.getTotalPrice(),0.001);
+        assertEquals(0, new BigDecimal("799.00").compareTo(cart.getTotalPrice()));
 
         //Act: increase the quantity to 3
         item.setQuantity(3);
 
         //Asset: total price should become 2397
-        assertEquals(2397.0,cart.getTotalPrice(),0.001);
+        assertEquals(0, new BigDecimal("2397.00").compareTo(cart.getTotalPrice()));
     }
 }

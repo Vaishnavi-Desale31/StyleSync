@@ -1,8 +1,11 @@
-
 package com.project.stylesync_ai.dto;
 
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+
+import java.math.BigDecimal;
 
 public class ProductRequest {
 
@@ -11,8 +14,11 @@ public class ProductRequest {
 
     private String description;
 
+    @NotNull(message = "Price is required")
     @PositiveOrZero(message = "Price cannot be negative")
-    private Double price;
+    @Digits(integer = 10, fraction = 2,
+            message = "Price must have at most 2 decimal places")
+    private BigDecimal price;
 
     private String brand;
 
@@ -43,11 +49,11 @@ public class ProductRequest {
         this.description = description;
     }
 
-    public Double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(Double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
 

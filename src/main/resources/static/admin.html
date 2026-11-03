@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | StyleSync AI</title>
+    <style>
+        :root { --ink:#222; --accent:#a45b45; --muted:#777; --line:#e6e2dc; --bg:#faf8f5; }
+        * { box-sizing: border-box; }
+        body { margin:0; font-family: Arial, sans-serif; background:var(--bg); color:var(--ink); }
+        header { display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
+            padding:16px 24px; background:#fff; border-bottom:1px solid var(--line); }
+        .logo { font-size:22px; font-weight:800; } .logo span { color:var(--accent); }
+        header a { color:var(--accent); text-decoration:none; font-size:14px; margin-left:14px; }
+        main { max-width:960px; margin:0 auto; padding:24px 16px 60px; }
+        section.panel { background:#fff; border:1px solid var(--line); border-radius:10px;
+            padding:20px; margin-bottom:22px; }
+        h2 { margin:0 0 14px; font-size:20px; } h3 { margin:16px 0 8px; font-size:16px; }
+        label { display:block; margin:12px 0 6px; font-size:13px; font-weight:700; }
+        input, select, textarea { width:100%; padding:10px; border:1px solid #d9d4cc; border-radius:5px; font-size:14px; background:#fff; }
+        .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+        button { padding:10px 16px; border:0; border-radius:5px; background:var(--ink); color:#fff;
+            font-size:14px; cursor:pointer; margin-top:14px; }
+        button:hover { background:var(--accent); } button:disabled { opacity:.6; cursor:not-allowed; }
+        button.secondary { background:#fff; color:var(--ink); border:1px solid #d9d4cc; }
+        button.danger { background:#b42318; }
+        button.small { padding:6px 10px; margin:4px 4px 0 0; font-size:13px; }
+        .status { min-height:20px; margin:10px 0 0; font-size:14px; color:var(--muted); overflow-wrap:anywhere; }
+        .status.error { color:#b42318; } .status.ok { color:#067647; }
+        .card { border:1px solid var(--line); border-radius:8px; padding:12px; margin-top:12px; }
+        .badge { display:inline-block; padding:2px 8px; border-radius:10px; background:#f1ece6; font-size:12px; }
+        table { width:100%; border-collapse:collapse; font-size:14px; }
+        th, td { text-align:left; padding:8px; border-bottom:1px solid var(--line); vertical-align:top; }
+        .tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+        .tabs button { margin:0; background:#fff; color:var(--ink); border:1px solid #d9d4cc; }
+        .tabs button.active { background:var(--ink); color:#fff; }
+        .scroll { overflow-x:auto; }
+        @media (max-width:640px) { .grid2 { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo">StyleSync<span>AI</span> Admin</div>
+    <nav><a href="/">Back to shop</a></nav>
+</header>
+
+<main>
+    <p class="status" id="gate-status" role="status">Checking admin access...</p>
+
+    <div id="admin-content" hidden>
+        <section class="panel" id="stats"></section>
+
+        <div class="tabs" id="tabs">
+            <button type="button" data-tab="orders" class="active">Orders</button>
+            <button type="button" data-tab="products">Products</button>
+            <button type="button" data-tab="categories">Categories</button>
+            <button type="button" data-tab="offers">Marketplace Offers</button>
+        </div>
+
+        <!-- ORDERS -->
+        <section class="panel" id="tab-orders">
+            <h2>Customer Orders</h2>
+            <button type="button" class="secondary" id="orders-refresh">Refresh</button>
+            <p class="status" id="orders-status" role="status"></p>
+            <div class="scroll"><table>
+                <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th>Total</th>
+                    <th>Payment</th><th>Status</th><th>Update</th></tr></thead>
+                <tbody id="orders-body"></tbody>
+            </table></div>
+        </section>
+
+        <!-- PRODUCTS -->
+        <section class="panel" id="tab-products" hidden>
+            <h2>Products</h2>
+            <form id="product-form">
+                <input type="hidden" id="p-id">
+                <div class="grid2">
+                    <div><label for="p-name">Name</label><input id="p-name" required></div>
+                    <div><label for="p-price">Price (INR)</label><input id="p-price" type="number" min="0" step="0.01" required></div>
+                    <div><label for="p-brand">Brand</label><input id="p-brand"></div>
+                    <div><label for="p-category">Category</label><select id="p-category"><option value="">None</option></select></div>
+                    <div><label for="p-size">Size</label><input id="p-size"></div>
+                    <div><label for="p-color">Color</label><input id="p-color"></div>
+                </div>
+                <label for="p-image">Image URL</label><input id="p-image" type="url">
+                <label for="p-description">Description</label><textarea id="p-description" rows="3" maxlength="1000"></textarea>
+                <button type="submit" id="p-save">Add Product</button>
+                <button type="button" class="secondary" id="p-cancel" hidden>Cancel edit</button>
+            </form>
+            <p class="status" id="products-status" role="status"></p>
+            <div class="scroll"><table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>                <tbody id="products-body"></tbody>
+            </table></div>
+        </section>
+
+        <!-- CATEGORIES -->
+        <section class="panel" id="tab-categories" hidden>
+            <h2>Categories</h2>
+            <form id="category-form">
+                <input type="hidden" id="c-id">
+                <label for="c-name">Category name</label>
+                <input id="c-name" maxlength="100" required>
+                <button type="submit" id="c-save">Add Category</button>
+                <button type="button" class="secondary" id="c-cancel" hidden>Cancel edit</button>
+            </form>
+            <p class="status" id="categories-status" role="status"></p>
+            <div class="scroll"><table>
+                <thead><tr><th>ID</th><th>Name</th><th></th></tr></thead>
+                <tbody id="categories-body"></tbody>
+            </table></div>
+        </section>
+
+        <!-- OFFERS -->
+        <section class="panel" id="tab-offers" hidden>
+            <h2>Marketplace Offers</h2>
+            <label for="o-product">Product</label>
+            <select id="o-product"></select>
+            <p class="status" id="offers-status" role="status"></p>
+
+            <form id="offer-form">
+                <input type="hidden" id="o-id">
+                <div class="grid2">
+                    <div><label for="o-platform">Platform (Amazon, Flipkart...)</label><input id="o-platform" maxlength="100" required></div>
+                    <div><label for="o-price">Price (INR)</label><input id="o-price" type="number" min="0" step="0.01" required></div>
+                </div>
+                <label for="o-url">Exact product page URL (https://...)</label>
+                <input id="o-url" type="url" maxlength="1000" required>
+                <button type="submit" id="o-save">Add Offer</button>
+                <button type="button" class="secondary" id="o-cancel" hidden>Cancel edit</button>
+            </form>
+
+            <div class="scroll"><table>
+                <thead><tr><th>Platform</th><th>Price</th><th>Link</th><th></th></tr></thead>
+                <tbody id="offers-body"></tbody>
+            </table></div>
+        </section>
+    </div>
+</main>
+
+<script>
+    function errorText(data) {
+        if (!data || typeof data !== "object") { return ""; }
+        if (data.message) { return data.message; }
+        return Object.values(data).filter(v => typeof v === "string").join(" ");
+    }
+
+    async function api(path, options = {}) {
+        const token = sessionStorage.getItem("accessToken");
+
+        if (!token) {
+            window.location.href = "/login.html";
+            throw new Error("Please log in.");
+        }
+
+        const headers = Object.assign(
+            { "Authorization": "Bearer " + token }, options.headers || {});
+
+        if (options.body !== undefined) {
+            headers["Content-Type"] = "application/json";
+        }
+
+        const response = await fetch(path, {
+            method: options.method || "GET",
+            headers,
+            body: options.body === undefined
+                ? undefined : JSON.stringify(options.body)
+        });
+
+        if (response.status === 401) {
+            sessionStorage.removeItem("accessToken");
+            window.location.href = "/login.html";
+            throw new Error("Your session expired. Please log in again.");
+        }
+
+        if (response.status === 204) {
+            return null;
+        }
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+            if (response.status === 403) {
+                throw new Error("You do not have permission to do that.");
+            }
+            throw new Error(
+                errorText(data) || "Request failed: " + response.status);
+        }
+
+        return data;
+    }
+
+    function show(el, text, kind) {
+        el.textContent = text;
+        el.className = "status" + (kind ? " " + kind : "");
+    }
+
+    function formatINR(value) {
+        return new Intl.NumberFormat("en-IN",
+            { style: "currency", currency: "INR" }).format(Number(value) || 0);
+    }
+
+    function el(tag, text, className) {
+        const node = document.createElement(tag);
+        if (text !== undefined && text !== null) { node.textContent = text; }
+        if (className) { node.className = className; }
+        return node;
+    }
+
+    let categories = [];
+    let products = [];
+
+    const NEXT_STATUS = {
+        PLACED: ["CONFIRMED", "CANCELLED"],
+        CONFIRMED: ["SHIPPED", "CANCELLED"],
+        SHIPPED: ["OUT_FOR_DELIVERY", "DELIVERED"],
+        OUT_FOR_DELIVERY: ["DELIVERED"]
+    };
+
+    // ---------- gate + tabs ----------
+    async function start() {
+        const gate = document.getElementById("gate-status");
+
+        try {
+            const profile = await api("/api/account/profile");
+
+            if (profile.role !== "ADMIN") {
+                show(gate, "This page is for administrators only.", "error");
+                return;
+            }
+
+            gate.hidden = true;
+            document.getElementById("admin-content").hidden = false;
+
+            await Promise.all([loadCategories(), loadProducts()]);
+            await loadOrders();
+            fillOfferProducts();
+        } catch (error) {
+            show(gate, error.message, "error");
+        }
+    }
+
+    document.getElementById("tabs").addEventListener("click", event => {
+        const tab = event.target.dataset.tab;
+        if (!tab) { return; }
+
+        document.querySelectorAll("#tabs button").forEach(b =>
+            b.classList.toggle("active", b === event.target));
+        ["orders", "products", "categories", "offers"].forEach(name => {
+            document.getElementById("tab-" + name).hidden = name !== tab;
+        });
+    });
+
+    // ---------- orders ----------
+    async function loadOrders() {
+        const status = document.getElementById("orders-status");
+        const body = document.getElementById("orders-body");
+        body.replaceChildren();
+
+        try {
+            const orders = await api("/api/admin/orders");
+            show(status, orders.length + " order(s).");
+            renderStats(orders);
+
+            orders.forEach(order => {
+                const row = document.createElement("tr");
+                const items = (order.items || []).map(i =>
+                    i.productName + " x" + i.quantity).join(", ");
+
+                const orderCell = el("td", "#" + order.id);
+                orderCell.appendChild(el("div", items, "badge"));
+
+                const options = NEXT_STATUS[order.status] || [];
+                const actionCell = el("td");
+
+                if (options.length) {
+                    const select = document.createElement("select");
+                    options.forEach(value => {
+                        const option = el("option", value.replaceAll("_", " "));
+                        option.value = value;
+                        select.appendChild(option);
+                    });
+
+                    const note = document.createElement("input");
+                    note.placeholder = "Note (optional)";
+                    note.maxLength = 255;
+
+                    const apply = el("button", "Apply", "small");
+                    apply.type = "button";
+                    apply.addEventListener("click", async () => {
+                        try {
+                            await api("/api/admin/orders/" + order.id + "/status", {
+                                method: "PATCH",
+                                body: { status: select.value, note: note.value }
+                            });
+                            await loadOrders();
+                        } catch (error) {
+                            show(status, error.message, "error");
+                        }
+                    });
+
+                    actionCell.append(select, note, apply);
+                } else {
+                    actionCell.textContent = "—";
+                }
+
+                row.append(
+                    orderCell,
+                    el("td", order.customerEmail || "—"),
+                    el("td", new Date(order.orderDate).toLocaleString()),
+                    el("td", formatINR(order.totalAmount)),
+                    el("td", (order.paymentMethod || "—") + " / " + (order.paymentStatus || "—")),
+                    el("td", order.status.replaceAll("_", " ")),
+                    actionCell
+                );
+                body.appendChild(row);
+            });
+        } catch (error) {
+            show(status, error.message, "error");
+        }
+    }
+
+    function renderStats(orders) {
+        const live = orders.filter(o => o.status !== "CANCELLED" &&
+            o.status !== "PAYMENT_FAILED" && o.status !== "PAYMENT_PENDING");
+        const revenue = live.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+        const pending = orders.filter(o =>
+            ["PLACED", "CONFIRMED", "SHIPPED", "OUT_FOR_DELIVERY"].includes(o.status)).length;
+
+        const stats = document.getElementById("stats");
+        stats.replaceChildren(
+            el("strong", "Orders: " + orders.length + "   ·   In progress: " + pending +
+                "   ·   Order value (excluding cancelled): " + formatINR(revenue))
+        );
+    }
+
+    document.getElementById("orders-refresh").addEventListener("click", loadOrders);
+
+    // ---------- categories ----------
+    async function loadCategories() {
+        const status = document.getElementById("categories-status");
+        const body = document.getElementById("categories-body");
+        body.replaceChildren();
+
+        try {
+            categories = await api("/api/categories");
+
+            const select = document.getElementById("p-category");
+            const current = select.value;
+            select.replaceChildren(Object.assign(el("option", "None"), { value: "" }));
+            categories.forEach(category => {
+                const option = el("option", category.name);
+                option.value = category.id;
+                select.appendChild(option);
+            });
+            select.value = current;
+
+            categories.forEach(category => {
+                const row = document.createElement("tr");
+                const actions = el("td");
+
+                const edit = el("button", "Edit", "secondary small");
+                edit.type = "button";
+                edit.addEventListener("click", () => {
+                    document.getElementById("c-id").value = category.id;
+                    document.getElementById("c-name").value = category.name;
+                    document.getElementById("c-save").textContent = "Update Category";
+                    document.getElementById("c-cancel").hidden = false;
+                });
+
+                const remove = el("button", "Delete", "danger small");
+                remove.type = "button";
+                remove.addEventListener("click", async () => {
+                    if (!confirm("Delete category " + category.name + "?")) { return; }
+                    try {
+                        await api("/api/categories/" + category.id, { method: "DELETE" });
+                        await loadCategories();
+                    } catch (error) {
+                        show(status, error.message, "error");
+                    }
+                });
+
+                actions.append(edit, remove);
+                row.append(el("td", category.id), el("td", category.name), actions);
+                body.appendChild(row);
+            });
+        } catch (error) {
+            show(status, error.message, "error");
+        }
+    }
+
+    function resetCategoryForm() {
+        document.getElementById("category-form").reset();
+        document.getElementById("c-id").value = "";
+        document.getElementById("c-save").textContent = "Add Category";
+        document.getElementById("c-cancel").hidden = true;
+    }
+
+    document.getElementById("c-cancel").addEventListener("click", resetCategoryForm);
+
+    document.getElementById("category-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        const status = document.getElementById("categories-status");
+        const id = document.getElementById("c-id").value;
+
+        try {
+            await api(id ? "/api/categories/" + id : "/api/categories", {
+                method: id ? "PUT" : "POST",
+                body: { name: document.getElementById("c-name").value.trim() }
+            });
+            resetCategoryForm();
+            show(status, "Category saved.", "ok");
+            await loadCategories();
+        } catch (error) {
+            show(status, error.message, "error");
+        }
+    });
+
+    // ---------- products ----------
+    async function loadProducts() {
+        const status = document.getElementById("products-status");
+        const body = document.getElementById("products-body");
+        body.replaceChildren();
+
+        try {
+            // Admin can see both active and inactive products
+            products = await api("/api/products");
+
+            products.forEach(product => {
+                const row = document.createElement("tr");
+                const actions = el("td");
+
+                // Edit button
+                const edit = el("button", "Edit", "secondary small");
+                edit.type = "button";
+
+                edit.addEventListener("click", () => {
+                    document.getElementById("p-id").value = product.id;
+                    document.getElementById("p-name").value = product.name || "";
+                    document.getElementById("p-price").value = product.price ?? "";
+                    document.getElementById("p-brand").value = product.brand || "";
+                    document.getElementById("p-category").value = product.category?.id ?? "";
+                    document.getElementById("p-size").value = product.size || "";
+                    document.getElementById("p-color").value = product.color || "";
+                    document.getElementById("p-image").value = product.imageUrl || "";
+                    document.getElementById("p-description").value = product.description || "";
+
+                    document.getElementById("p-save").textContent = "Update Product";
+                    document.getElementById("p-cancel").hidden = false;
+
+                    document.getElementById("product-form").scrollIntoView({
+                        behavior: "smooth"
+                    });
+                });
+
+                // Active / Inactive status
+                const isActive = product.active !== false;
+
+                const statusCell = el(
+                    "td",
+                    isActive ? "Active" : "Inactive",
+                    "badge"
+                );
+
+                // Deactivate / Reactivate button
+                const toggle = el(
+                    "button",
+                    isActive ? "Deactivate" : "Reactivate",
+                    isActive ? "danger small" : "secondary small"
+                );
+
+                toggle.type = "button";
+
+                toggle.addEventListener("click", async () => {
+                    const action = isActive ? "deactivate" : "reactivate";
+
+                    const message = isActive
+                        ? "Deactivate " + product.name + "? Customers will no longer see or purchase this product."
+                        : "Reactivate " + product.name + "? Customers will be able to see and purchase it again.";
+
+                    if (!confirm(message)) {
+                        return;
+                    }
+
+                    try {
+                        if (isActive) {
+                            await api("/api/products/" + product.id, {
+                                method: "DELETE"
+                            });
+                        } else {
+                            await api("/api/products/" + product.id + "/reactivate", {
+                                method: "PATCH"
+                            });
+                        }
+
+                        show(
+                            status,
+                            "Product " + action + "d successfully.",
+                            "ok"
+                        );
+
+                        await loadProducts();
+                        fillOfferProducts();
+
+                    } catch (error) {
+                        show(status, error.message, "error");
+                    }
+                });
+
+                actions.append(edit, toggle);
+
+                row.append(
+                    el("td", product.id),
+                    el("td", product.name),
+                    el("td", product.category?.name || "—"),
+                    el("td", formatINR(product.price)),
+                    statusCell,
+                    actions
+                );
+
+                body.appendChild(row);
+            });
+
+        } catch (error) {
+            show(status, error.message, "error");
+        }
+    }
+
+    function resetProductForm() {
+        document.getElementById("product-form").reset();
+        document.getElementById("p-id").value = "";
+        document.getElementById("p-save").textContent = "Add Product";
+        document.getElementById("p-cancel").hidden = true;
+    }
+
+    document.getElementById("p-cancel").addEventListener("click", resetProductForm);
+
+    document.getElementById("product-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        const status = document.getElementById("products-status");
+        const id = document.getElementById("p-id").value;
+        const categoryId = document.getElementById("p-category").value;
+
+        const body = {
+            name: document.getElementById("p-name").value.trim(),
+            price: Number(document.getElementById("p-price").value),
+            brand: document.getElementById("p-brand").value.trim() || null,
+            size: document.getElementById("p-size").value.trim() || null,
+            color: document.getElementById("p-color").value.trim() || null,
+            imageUrl: document.getElementById("p-image").value.trim() || null,
+            description: document.getElementById("p-description").value.trim() || null,
+            categoryId: categoryId ? Number(categoryId) : null
+        };
+
+        try {
+            await api(id ? "/api/products/" + id : "/api/products", {
+                method: id ? "PUT" : "POST", body });
+            resetProductForm();
+            show(status, "Product saved.", "ok");
+            await loadProducts();
+            fillOfferProducts();
+        } catch (error) {
+            show(status, error.message, "error");
+        }
+    });
+
+    // ---------- offers ----------
+    function fillOfferProducts() {
+        const select = document.getElementById("o-product");
+        const current = select.value;
+        select.replaceChildren();
+
+        products.forEach(product => {
+            const option = el("option", "#" + product.id + " " + product.name);
+            option.value = product.id;
+            select.appendChild(option);
+        });
+
+        if (current) { select.value = current; }
+        loadOffers();
+    }
+
+    async function loadOffers() {
+        const status = document.getElementById("offers-status");
+        const body = document.getElementById("offers-body");
+        body.replaceChildren();
+
+        const productId = document.getElementById("o-product").value;
+
+        if (!productId) {
+            show(status, "Add a product first.");
+            return;
+        }
+
+        try {
+            const offers = await api("/api/price-comparison/" + productId + "/offers");
+            show(status, offers.length
+                ? offers.length + " offer(s) for this product."
+                : "No offers yet. Customers will see a \"no offers\" message for this product.");
+
+            offers.forEach(offer => {
+                const row = document.createElement("tr");
+                const linkCell = el("td");
+                const link = el("a", "Open link");
+                link.href = offer.productUrl;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                linkCell.appendChild(link);
+
+                const actions = el("td");
+                const edit = el("button", "Edit", "secondary small");
+                edit.type = "button";
+                edit.addEventListener("click", () => {
+                    document.getElementById("o-id").value = offer.id;
+                    document.getElementById("o-platform").value = offer.platform;
+                    document.getElementById("o-price").value = offer.price;
+                    document.getElementById("o-url").value = offer.productUrl;
+                    document.getElementById("o-save").textContent = "Update Offer";
+                    document.getElementById("o-cancel").hidden = false;
+                });
+
+                const remove = el("button", "Delete", "danger small");
+                remove.type = "button";
+                remove.addEventListener("click", async () => {
+                    if (!confirm("Delete this offer?")) { return; }
+                    try {
+                        await api("/api/price-comparison/offers/" + offer.id, { method: "DELETE" });
+                        await loadOffers();
+                    } catch (error) {
+                        show(status, error.message, "error");
+                    }
+                });
+
+                actions.append(edit, remove);
+                row.append(el("td", offer.platform), el("td", formatINR(offer.price)), linkCell, actions);
+                body.appendChild(row);
+            });
+        } catch (error) {
+            show(status, error.message, "error");
+        }
+    }
+
+    function resetOfferForm() {
+        document.getElementById("offer-form").reset();
+        document.getElementById("o-id").value = "";
+        document.getElementById("o-save").textContent = "Add Offer";
+        document.getElementById("o-cancel").hidden = true;
+    }
+
+    document.getElementById("o-cancel").addEventListener("click", resetOfferForm);
+    document.getElementById("o-product").addEventListener("change", () => {
+        resetOfferForm();
+        loadOffers();
+    });
+
+    document.getElementById("offer-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        const status = document.getElementById("offers-status");
+        const productId = document.getElementById("o-product").value;
+        const id = document.getElementById("o-id").value;
+
+        const url = document.getElementById("o-url").value.trim();
+
+        if (!/^https:\/\//i.test(url)) {
+            show(status, "The offer URL must start with https://", "error");
+            return;
+        }
+
+        const body = {
+            platform: document.getElementById("o-platform").value.trim(),
+            price: Number(document.getElementById("o-price").value),
+            productUrl: url
+        };
+
+        try {
+            await api(id ? "/api/price-comparison/offers/" + id
+                    : "/api/price-comparison/" + productId + "/offers",
+                { method: id ? "PUT" : "POST", body });
+            resetOfferForm();
+            await loadOffers();
+        } catch (error) {
+            show(status, error.message, "error");
+        }
+    });
+
+    start();
+</script>
+</body>
+</html>

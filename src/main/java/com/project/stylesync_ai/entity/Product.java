@@ -1,10 +1,11 @@
-
 package com.project.stylesync_ai.entity;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "products")
@@ -21,8 +22,10 @@ public class Product {
     @Column(length = 1000)
     private String description;
 
+    @NotNull(message = "Price is required")
     @PositiveOrZero(message = "Price cannot be negative")
-    private Double price;
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal price;
 
     private String brand;
 
@@ -32,6 +35,10 @@ public class Product {
 
     private String color;
 
+    // Soft-delete flag (re-created: your original may differ).
+    // Nullable column so existing rows still load.
+    @Column(name = "active")
+    private Boolean active = true;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
@@ -42,7 +49,7 @@ public class Product {
     }
 
     // Constructor for creating a product
-    public Product(String name, String description, Double price,
+    public Product(String name, String description, BigDecimal price,
                    String brand, String imageUrl, String size,
                    String color, Category category) {
         this.name = name;
@@ -77,11 +84,11 @@ public class Product {
         this.description = description;
     }
 
-    public Double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(Double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
 
@@ -117,6 +124,14 @@ public class Product {
         this.color = color;
     }
 
+    public boolean isActive() {
+        return active == null || active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     public Category getCategory() {
         return category;
     }
@@ -125,4 +140,3 @@ public class Product {
         this.category = category;
     }
 }
-

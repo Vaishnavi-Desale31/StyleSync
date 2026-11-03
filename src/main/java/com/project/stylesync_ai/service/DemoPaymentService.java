@@ -1,4 +1,3 @@
-
 package com.project.stylesync_ai.service;
 
 import com.project.stylesync_ai.entity.Cart;
@@ -7,6 +6,7 @@ import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.entity.OrderItem;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.OrderRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@ConditionalOnProperty(
+        name = "app.demo-payment.enabled",
+        havingValue = "true")
 public class DemoPaymentService {
 
     private final CartRepository cartRepository;
@@ -56,8 +59,7 @@ public class DemoPaymentService {
         order.setPaymentStatus("PENDING");
 
         for (CartItem cartItem : cart.getItems()) {
-            BigDecimal price = BigDecimal.valueOf(
-                    cartItem.getProduct().getPrice());
+            BigDecimal price = cartItem.getProduct().getPrice();
 
             total = total.add(price.multiply(
                     BigDecimal.valueOf(cartItem.getQuantity())));
@@ -73,7 +75,7 @@ public class DemoPaymentService {
         }
 
         total = total.setScale(2, RoundingMode.HALF_UP);
-        order.setTotalAmount(total.doubleValue());
+        order.setTotalAmount(total);
         order.setItems(orderItems);
 
         return orderRepository.save(order);

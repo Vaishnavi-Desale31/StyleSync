@@ -1,5 +1,6 @@
 
 package com.project.stylesync_ai.service;
+import java.math.BigDecimal;
 
 import com.project.stylesync_ai.dto.RazorpayVerifyRequest;
 import com.project.stylesync_ai.entity.Order;
@@ -344,7 +345,7 @@ class RazorpayPaymentServiceTest {
         order.setPaymentMethod("RAZORPAY");
         order.setRazorpayOrderId(RAZORPAY_ORDER_ID);
         order.setPaymentStatus("PENDING");
-        order.setTotalAmount(799.00);
+        order.setTotalAmount(new BigDecimal("799.00"));
         order.setCartId(2L);
         return order;
     }
@@ -396,7 +397,7 @@ class RazorpayPaymentServiceTest {
 
         when(product.getId()).thenReturn(2L);
         when(product.getName()).thenReturn("Premium Black T-Shirt");
-        when(product.getPrice()).thenReturn(799.0);
+        when(product.getPrice()).thenReturn(new BigDecimal("799.00"));
 
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));

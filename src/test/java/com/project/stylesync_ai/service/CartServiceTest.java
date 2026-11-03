@@ -106,7 +106,7 @@ class CartServiceTest {
     void addProduct_shouldAddProductToCartSuccessfully() {
         Cart cart = new Cart();
         Product product = mock(Product.class);
-
+        when(product.isActive()).thenReturn(true);
 
         when(cartRepository.findByIdAndUser_Email(2L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
@@ -235,6 +235,7 @@ class CartServiceTest {
         //Arrange: cart already contains two units of this product
         Cart cart = new Cart();
         Product product = mock(Product.class);
+        when(product.isActive()).thenReturn(true);
         when(product.getId())
                 .thenReturn(2L);
 
@@ -267,6 +268,7 @@ class CartServiceTest {
         //Arrange: add a product wih quantity two
         Cart cart = new Cart();
         Product product = mock(Product.class);
+        when(product.isActive()).thenReturn(true);
         when(product.getId())
                 .thenReturn(2L);
 
@@ -313,6 +315,7 @@ class CartServiceTest {
         // Arrange: cart contains one product
         Cart cart = new Cart();
         Product product = mock(Product.class);
+
         when(product.getId()).thenReturn(2L);
 
         CartItem item = new CartItem();
@@ -468,6 +471,33 @@ class CartServiceTest {
 
         assertEquals(404, exception.getStatusCode().value());
         assertEquals("Cart not found", exception.getReason());
+
+        verify(cartRepository, never()).save(any(Cart.class));
+    }
+
+    @Test
+    void addProduct_shouldRejectInactiveProduct() {
+        Cart cart = new Cart();
+        Product product = mock(Product.class);
+
+        when(cartRepository.findByIdAndUser_Email(2L, TEST_EMAIL))
+                .thenReturn(Optional.of(cart));
+
+        when(productRepository.findById(2L))
+                .thenReturn(Optional.of(product));
+
+        when(product.isActive()).thenReturn(false);
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> cartService.addProduct(2L, 2L, 1, TEST_EMAIL)
+        );
+
+        assertEquals(409, exception.getStatusCode().value());
+        assertEquals(
+                "This product is inactive and cannot be added to cart",
+                exception.getReason()
+        );
 
         verify(cartRepository, never()).save(any(Cart.class));
     }

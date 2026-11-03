@@ -1,5 +1,6 @@
 package com.project.stylesync_ai.service;
 
+import java.math.BigDecimal;
 import com.project.stylesync_ai.dto.WishlistItemResponse;
 import com.project.stylesync_ai.entity.Product;
 import com.project.stylesync_ai.entity.User;
@@ -51,7 +52,7 @@ class WishlistServiceTest {
         product = new Product(
                 "Premium Black T-Shirt",
                 "Premium cotton T-shirt for everyday wear",
-                799.0,
+                new BigDecimal("799.00"),
                 "StyleSync Basics",
                 "/images/black-tshirt.jpeg",
                 "L",
@@ -84,7 +85,7 @@ class WishlistServiceTest {
 
         assertEquals(2L, response.productId());
         assertEquals("Premium Black T-Shirt", response.name());
-        assertEquals(799.0, response.price());
+        assertEquals(0, new BigDecimal("799.00").compareTo(response.price()));
         assertEquals("StyleSync Basics", response.brand());
 
         verify(wishlistRepository).save(any(WishlistItem.class));

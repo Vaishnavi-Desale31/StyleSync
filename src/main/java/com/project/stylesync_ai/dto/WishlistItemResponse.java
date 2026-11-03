@@ -3,6 +3,7 @@ package com.project.stylesync_ai.dto;
 import com.project.stylesync_ai.entity.Product;
 import com.project.stylesync_ai.entity.WishlistItem;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record WishlistItemResponse(
@@ -10,7 +11,7 @@ public record WishlistItemResponse(
         Long productId,
         String name,
         String description,
-        Double price,
+        BigDecimal price,
         String brand,
         String imageUrl,
         String size,

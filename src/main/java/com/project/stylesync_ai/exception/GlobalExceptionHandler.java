@@ -8,7 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
-
+import org.springframework.dao.DataIntegrityViolationException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,6 +68,20 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(exception.getStatusCode())
+                .body(error);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(
+            DataIntegrityViolationException exception) {
+
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Conflict");
+        error.put("message",
+                "This product cannot be deleted because it is currently referenced by another record, such as a cart or order.");
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
                 .body(error);
     }
 
