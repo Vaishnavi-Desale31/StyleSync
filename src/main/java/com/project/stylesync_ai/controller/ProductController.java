@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -30,10 +31,12 @@ public class ProductController {
         return productService.createProduct(request);
     }
 
-    // Get all products
+    // Get all products (admins see everything, everyone else sees only active)
     @GetMapping
-    public List<Product> getAllProducts(){
-        return productService.getAllProducts();
+    public List<Product> getAllProducts(Authentication authentication){
+        return isAdmin(authentication)
+                ? productService.getAllProducts()
+                : productService.getActiveProducts();
     }
 
     // Get only active products for customers
@@ -73,7 +76,7 @@ public class ProductController {
         return productService.searchProductsByName(name);
     }
 
-    //Get products by category ID
+    // Get products by category ID
     @GetMapping("/category/{categoryId}")
     public List<Product> getProductsByCategoryId(
             @PathVariable Long categoryId){
@@ -83,8 +86,8 @@ public class ProductController {
     // Get products with pagination
     @GetMapping("/page")
     public Page<Product> getProductsWithPagination(
-           @RequestParam(defaultValue = "0") int page,
-           @RequestParam(defaultValue = "10") int size){
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size){
 
         if(page < 0){
             throw new IllegalArgumentException(
@@ -110,7 +113,7 @@ public class ProductController {
             @RequestParam(defaultValue = "asc") String direction
     ){
 
-        //Validate the sorting field
+        // Validate the sorting field
         List<String> allowedFields = List.of(
                 "name",
                 "price",
@@ -123,9 +126,9 @@ public class ProductController {
             );
         }
 
-        //Validate the sorting direction
+        // Validate the sorting direction
         if(!direction.equalsIgnoreCase("asc")
-        && !direction.equalsIgnoreCase("desc")){
+                && !direction.equalsIgnoreCase("desc")){
             throw new IllegalArgumentException(
                     "Invalid sort direction. Use asc or desc"
             );
@@ -133,5 +136,10 @@ public class ProductController {
         return productService.getProductsSorted(
                 sortBy,
                 direction.toLowerCase());
+    }
+
+    private boolean isAdmin(Authentication authentication){
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 }
