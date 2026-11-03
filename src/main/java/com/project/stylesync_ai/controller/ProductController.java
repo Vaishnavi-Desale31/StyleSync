@@ -47,8 +47,9 @@ public class ProductController {
 
     // Get a product by ID
     @GetMapping("/{id}")
-    public Product getProductById(@PathVariable Long id){
-        return productService.getProductById(id);
+    public Product getProductById(@PathVariable Long id,
+                                  Authentication authentication){
+        return productService.getVisibleProductById(id, isAdmin(authentication));
     }
 
     // Update a product
