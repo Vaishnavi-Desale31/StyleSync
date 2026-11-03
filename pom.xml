@@ -11,8 +11,8 @@
 	<groupId>com.project</groupId>
 	<artifactId>stylesync-ai</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>StyleSync</name>
+	<description>Fashion e-commerce backend built with Spring Boot</description>
 	<url/>
 	<licenses>
 		<license/>
