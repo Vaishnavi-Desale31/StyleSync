@@ -1,13 +1,16 @@
-
 package com.project.stylesync_ai.controller;
 
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.service.DemoPaymentService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@ConditionalOnProperty(
+        name = "app.demo-payment.enabled",
+        havingValue = "true")
 @RequestMapping("/api/payments/demo")
 public class DemoPaymentController {
 

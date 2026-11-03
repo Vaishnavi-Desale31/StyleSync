@@ -1,5 +1,6 @@
 package com.project.stylesync_ai;
 
+import java.math.BigDecimal;
 import com.project.stylesync_ai.entity.Cart;
 import com.project.stylesync_ai.entity.CartItem;
 import com.project.stylesync_ai.entity.Product;
@@ -67,7 +68,7 @@ class OrderTransactionIntegrationTest {
         Product productToSave = new Product(
                 "Rollback Test T-shirt",
                 "Product for transaction integration testing",
-                500.0,
+                new BigDecimal("500.00"),
                 "TestBrand",
                 null,
                 "M",
@@ -175,7 +176,7 @@ class OrderTransactionIntegrationTest {
                 new Product(
                         "Checkout Test T-shirt",
                         "Product for successful checkout testing",
-                        500.0,
+                        new BigDecimal("500.00"),
                         "TestBrand",
                         null,
                         "M",
@@ -200,7 +201,7 @@ class OrderTransactionIntegrationTest {
 
         assertNotNull(savedOrder.getId());
         assertEquals("PLACED", savedOrder.getStatus());
-        assertEquals(1000.0, savedOrder.getTotalAmount(),0.001);
+        assertEquals(0, new BigDecimal("1000.00").compareTo(savedOrder.getTotalAmount()));
 
         Long persistedItemCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM order_items WHERE order_id = ?",

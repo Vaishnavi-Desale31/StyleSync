@@ -53,6 +53,12 @@ public class WishlistService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Product not found"));
+        if (!product.isActive()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "This product is inactive and cannot be added to wishlist"
+            );
+        }
 
         WishlistItem item =
                 wishlistRepository.save(new WishlistItem(user, product));
@@ -67,6 +73,7 @@ public class WishlistService {
         return wishlistRepository
                 .findAllByUser_IdOrderByCreatedAtDesc(user.getId())
                 .stream()
+                .filter(item -> item.getProduct().isActive())
                 .map(WishlistItemResponse::from)
                 .toList();
     }

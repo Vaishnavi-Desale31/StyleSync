@@ -80,8 +80,7 @@ public class RazorpayPaymentService {
         order.setPaymentStatus("PENDING");
 
         for (CartItem cartItem : cart.getItems()) {
-            BigDecimal price = BigDecimal.valueOf(
-                    cartItem.getProduct().getPrice());
+            BigDecimal price = cartItem.getProduct().getPrice();
 
             total = total.add(
                     price.multiply(
@@ -101,7 +100,7 @@ public class RazorpayPaymentService {
 
         long amountPaise = total.movePointRight(2).longValueExact();
 
-        order.setTotalAmount(total.doubleValue());
+        order.setTotalAmount(total);
         order.setItems(orderItems);
 
         Order savedOrder = orderRepository.save(order);
@@ -220,8 +219,7 @@ public class RazorpayPaymentService {
                         "Payment has not been captured for this order");
             }
 
-            long expectedPaise = BigDecimal.valueOf(
-                            order.getTotalAmount())
+            long expectedPaise = order.getTotalAmount()
                     .setScale(2, RoundingMode.HALF_UP)
                     .movePointRight(2)
                     .longValueExact();

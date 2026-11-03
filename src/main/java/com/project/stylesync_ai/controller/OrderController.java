@@ -2,6 +2,7 @@ package com.project.stylesync_ai.controller;
 
 
 import com.project.stylesync_ai.dto.BuyNowRequest;
+import com.project.stylesync_ai.dto.CancelOrderRequest;
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.service.OrderService;
 import org.springframework.http.HttpStatus;
@@ -39,6 +40,17 @@ public class OrderController {
                 request.getProductId(),
                 request.getQuantity(),
                 authentication.getName());
+    }
+
+    @PostMapping("/{orderId}/cancel")
+    public Order cancelOrder(
+            @PathVariable Long orderId,
+            @RequestBody(required = false) CancelOrderRequest request,
+            Authentication authentication) {
+        return orderService.cancelOrder(
+                orderId,
+                authentication.getName(),
+                request == null ? null : request.getReason());
     }
 
     @GetMapping("/{orderId}")

@@ -1,4 +1,3 @@
-
 package com.project.stylesync_ai.config;
 
 import com.project.stylesync_ai.security.JwtAuthenticationFilter;
@@ -38,6 +37,10 @@ public class SecurityConfig {
                                 "/index.html",
                                 "/login.html",
                                 "/register.html",
+                                "/account.html",
+                                "/admin.html",
+                                "/forgotpassword.html",
+                                "/resetpassword.html",
                                 "/favicon.ico",
                                 "/css/**",
                                 "/js/**",
@@ -45,6 +48,9 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/error"
                         ).permitAll()
+
+                        // Admin area (order management): ADMIN only.
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         .requestMatchers(
                                 HttpMethod.POST,
@@ -59,6 +65,35 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/api/price-comparison/offers/**"
+                        ).hasRole("ADMIN")
+
+                        // Catalogue management: ADMIN only, for every write
+                        // method (this also covers deactivate/reactivate).
+                        // Reads (GET) stay available to authenticated customers.
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/products",
+                                "/api/products/**",
+                                "/api/categories",
+                                "/api/categories/**"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/products/**",
+                                "/api/categories/**"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/products/**",
+                                "/api/categories/**"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/products/**",
+                                "/api/categories/**"
                         ).hasRole("ADMIN")
 
                         .anyRequest().authenticated()
