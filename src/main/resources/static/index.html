@@ -447,6 +447,18 @@
             line-height: 1.4;
         }
 
+        .delivery-box {
+            margin: 12px 0;
+        }
+
+        .delivery-box select {
+            display: block;
+            width: 100%;
+            max-width: 520px;
+            margin-top: 6px;
+            padding: 8px;
+        }
+
         .demo-pay-button {
             margin-left: 10px;
         }
@@ -730,6 +742,14 @@
         </div>
 
         <h3 id="cart-total">Total: ₹0.00</h3>
+
+        <div class="delivery-box">
+            <label for="delivery-address"><strong>Deliver to</strong></label>
+            <select id="delivery-address">
+                <option value="">Loading addresses...</option>
+            </select>
+            <p class="status" id="delivery-status" role="status"></p>
+        </div>
 
         <button class="button" id="checkout-button" type="button">
             Proceed to Checkout
@@ -1408,6 +1428,14 @@
                         return;
                     }
 
+                    const addressId = requireDeliveryAddressId(null);
+
+                    if (addressId === null) {
+                        document.getElementById("cart")
+                            .scrollIntoView({ behavior: "smooth" });
+                        return;
+                    }
+
                     buyNowButton.disabled = true;
                     buyNowButton.textContent = "Placing order...";
 
@@ -1420,7 +1448,8 @@
                             },
                             body: JSON.stringify({
                                 productId: product.id,
-                                quantity: 1
+                                quantity: 1,
+                                addressId: addressId
                             })
                         });
 
@@ -1943,7 +1972,10 @@
     }
 
     document.getElementById("refresh-cart")
-        .addEventListener("click", loadCart);
+        .addEventListener("click", () => {
+            loadCart();
+            loadDeliveryAddresses();
+        });
 
     document.getElementById("checkout-button")
         .addEventListener("click", async () => {
@@ -1967,6 +1999,12 @@
                 return;
             }
 
+            const addressId = requireDeliveryAddressId(checkoutStatus);
+
+            if (addressId === null) {
+                return;
+            }
+
             checkoutButton.disabled = true;
             checkoutButton.textContent = "Placing Order...";
             checkoutStatus.textContent = "Processing your order...";
@@ -1977,8 +2015,10 @@
                     {
                         method: "POST",
                         headers: {
+                            "Content-Type": "application/json",
                             "Authorization": "Bearer " + token
-                        }
+                        },
+                        body: JSON.stringify({ addressId: addressId })
                     }
                 );
 
@@ -2036,15 +2076,28 @@
                 return;
             }
 
+            const addressId = requireDeliveryAddressId(checkoutStatus);
+
+            if (addressId === null) {
+                return;
+            }
+
             demoButton.disabled = true;
             checkoutStatus.textContent = "Creating demo payment order...";
 
-            const headers = { "Authorization": "Bearer " + token };
+            const headers = {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            };
 
-            async function callDemo(path) {
+            async function callDemo(path, body) {
                 const response = await fetch(
                     "/api/payments/demo/orders/" + path,
-                    { method: "POST", headers }
+                    {
+                        method: "POST",
+                        headers,
+                        body: body ? JSON.stringify(body) : undefined
+                    }
                 );
 
                 if (response.status === 401) {
@@ -2065,7 +2118,8 @@
             }
 
             try {
-                const order = await callDemo(encodeURIComponent(cartId));
+                const order = await callDemo(
+                    encodeURIComponent(cartId), { addressId: addressId });
 
                 const succeed = confirm(
                     "DEMO payment for order #" + order.id + " (" +
@@ -2132,6 +2186,12 @@
                 return;
             }
 
+            const addressId = requireDeliveryAddressId(checkoutStatus);
+
+            if (addressId === null) {
+                return;
+            }
+
             payButton.disabled = true;
             checkoutStatus.textContent = "Creating payment order...";
 
@@ -2145,7 +2205,11 @@
 
                 const createResponse = await fetch(
                     `/api/payments/razorpay/orders/${encodeURIComponent(cartId)}`,
-                    { method: "POST", headers: authHeaders }
+                    {
+                        method: "POST",
+                        headers: authHeaders,
+                        body: JSON.stringify({ addressId: addressId })
+                    }
                 );
 
                 if (createResponse.status === 401) {
@@ -2290,6 +2354,95 @@
         }
     }
 
+    // ---------- Delivery address (chosen at checkout) ----------
+
+    function formatAddress(address) {
+        return [
+            address.fullName,
+            address.line1,
+            address.line2,
+            address.city,
+            address.state,
+            address.postalCode
+        ].filter(Boolean).join(", ");
+    }
+
+    async function loadDeliveryAddresses() {
+        const select = document.getElementById("delivery-address");
+        const note = document.getElementById("delivery-status");
+        const token = sessionStorage.getItem("accessToken");
+
+        if (!select) {
+            return;
+        }
+
+        if (!token) {
+            select.replaceChildren(new Option("Log in to choose an address", ""));
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/account/addresses", {
+                headers: { "Authorization": "Bearer " + token }
+            });
+
+            if (!response.ok) {
+                throw new Error("Could not load addresses: " + response.status);
+            }
+
+            const addresses = await response.json();
+
+            select.replaceChildren();
+            note.replaceChildren();
+
+            if (addresses.length === 0) {
+                select.appendChild(new Option("No saved addresses", ""));
+
+                const link = document.createElement("a");
+                link.href = "/account.html";
+                link.textContent = "Add a delivery address in My Account";
+                note.append(link);
+                return;
+            }
+
+            addresses.forEach(address => {
+                const label = (address.label ? address.label + ": " : "") +
+                    formatAddress(address);
+                const option = new Option(label, address.id);
+                option.selected = address.defaultAddress === true;
+                select.appendChild(option);
+            });
+
+            if (!select.value) {
+                select.selectedIndex = 0;
+            }
+        } catch (error) {
+            console.error("Address error:", error);
+            select.replaceChildren(new Option("Could not load addresses", ""));
+        }
+    }
+
+    // Returns the chosen address id, or null (and explains why).
+    function requireDeliveryAddressId(statusElement) {
+        const select = document.getElementById("delivery-address");
+        const id = select ? Number(select.value) : 0;
+
+        if (!id) {
+            const message =
+                "Please choose a delivery address (add one in My Account).";
+
+            if (statusElement) {
+                statusElement.textContent = message;
+            } else {
+                alert(message);
+            }
+
+            return null;
+        }
+
+        return id;
+    }
+
     async function loadOrders() {
         const ordersList = document.getElementById("orders-list");
         const ordersStatus = document.getElementById("orders-status");
@@ -2391,10 +2544,23 @@
                     "Payment: " + (order.paymentMethod || "—") +
                     " (" + (order.paymentStatus || "—") + ")";
 
+                const deliverTo = document.createElement("p");
+                deliverTo.textContent = order.shipFullName
+                    ? "Deliver to: " + formatAddress({
+                    fullName: order.shipFullName,
+                    line1: order.shipLine1,
+                    line2: order.shipLine2,
+                    city: order.shipCity,
+                    state: order.shipState,
+                    postalCode: order.shipPostalCode
+                })
+                    : "Deliver to: not recorded (older order)";
+
                 card.append(
                     heading,
                     status,
                     payment,
+                    deliverTo,
                     date,
                     itemsHeading,
                     itemsList,
@@ -2484,6 +2650,7 @@
         await loadCategories();
         await loadProducts();
         await loadCart();
+        await loadDeliveryAddresses();
         await loadOrders();
         showAccountLinks();
     }

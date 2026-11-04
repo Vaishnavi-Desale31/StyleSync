@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 
 import com.project.stylesync_ai.dto.RazorpayVerifyRequest;
 import com.project.stylesync_ai.entity.Order;
+import com.project.stylesync_ai.entity.Address;
+import com.project.stylesync_ai.repository.AddressRepository;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.OrderRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +56,9 @@ class RazorpayPaymentServiceTest {
 
     @Mock
     private OrderRepository orderRepository;
+
+    @Mock
+    private AddressRepository addressRepository;
 
     @Spy
     @InjectMocks
@@ -270,35 +275,35 @@ class RazorpayPaymentServiceTest {
 
     @Test
     void verifyPayment_shouldRejectAmountMismatch() throws Exception {        assertPaymentRejected(
-                new JSONObject()
-                        .put("order_id", RAZORPAY_ORDER_ID)
-                        .put("status", "captured")
-                        .put("amount", 50000)
-                        .put("currency", "INR"),
-                "Payment amount or currency does not match"
-        );
+            new JSONObject()
+                    .put("order_id", RAZORPAY_ORDER_ID)
+                    .put("status", "captured")
+                    .put("amount", 50000)
+                    .put("currency", "INR"),
+            "Payment amount or currency does not match"
+    );
     }
 
     @Test
     void verifyPayment_shouldRejectCurrencyMismatch() throws Exception {        assertPaymentRejected(
-                new JSONObject()
-                        .put("order_id", RAZORPAY_ORDER_ID)
-                        .put("status", "captured")
-                        .put("amount", 79900)
-                        .put("currency", "USD"),
-                "Payment amount or currency does not match"
-        );
+            new JSONObject()
+                    .put("order_id", RAZORPAY_ORDER_ID)
+                    .put("status", "captured")
+                    .put("amount", 79900)
+                    .put("currency", "USD"),
+            "Payment amount or currency does not match"
+    );
     }
 
     @Test
     void verifyPayment_shouldRejectPaymentNotCaptured() throws Exception {        assertPaymentRejected(
-                new JSONObject()
-                        .put("order_id", RAZORPAY_ORDER_ID)
-                        .put("status", "authorized")
-                        .put("amount", 79900)
-                        .put("currency", "INR"),
-                "Payment has not been captured for this order"
-        );
+            new JSONObject()
+                    .put("order_id", RAZORPAY_ORDER_ID)
+                    .put("status", "authorized")
+                    .put("amount", 79900)
+                    .put("currency", "INR"),
+            "Payment has not been captured for this order"
+    );
     }
 
     private void assertPaymentRejected(
@@ -344,6 +349,7 @@ class RazorpayPaymentServiceTest {
         Order order = new Order();
         order.setPaymentMethod("RAZORPAY");
         order.setRazorpayOrderId(RAZORPAY_ORDER_ID);
+        order.setStatus("PAYMENT_PENDING");
         order.setPaymentStatus("PENDING");
         order.setTotalAmount(new BigDecimal("799.00"));
         order.setCartId(2L);
@@ -385,6 +391,17 @@ class RazorpayPaymentServiceTest {
         CartItem cartItem = org.mockito.Mockito.mock(CartItem.class);
         Product product = org.mockito.Mockito.mock(Product.class);
         User user = org.mockito.Mockito.mock(User.class);
+        Address address = new Address();
+        address.setFullName("Rahul Sharma");
+        address.setPhone("9876543210");
+        address.setLine1("12 MG Road");
+        address.setCity("Thane");
+        address.setState("Maharashtra");
+        address.setPostalCode("400601");
+
+        when(addressRepository.findByIdAndUser_Email(7L, EMAIL))
+                .thenReturn(Optional.of(address));
+        when(product.isActive()).thenReturn(true);
 
         when(cartRepository.findByIdAndUser_Email(2L, EMAIL))
                 .thenReturn(Optional.of(cart));
@@ -408,7 +425,7 @@ class RazorpayPaymentServiceTest {
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> razorpayPaymentService.createPaymentOrder(2L, EMAIL)
+                () -> razorpayPaymentService.createPaymentOrder(2L, EMAIL, 7L)
         );
 
         assertEquals(HttpStatus.BAD_GATEWAY, exception.getStatusCode());
@@ -419,5 +436,79 @@ class RazorpayPaymentServiceTest {
 
         verify(orderRepository, times(1)).save(any(Order.class));
         verify(cart, never()).clearItems();
+    }
+
+    @Test
+    void verifyPayment_shouldRejectOrderThatIsNotAwaitingPayment() {
+        RazorpayVerifyRequest request = validRequest();
+
+        Order order = razorpayOrder();
+        order.setStatus("CANCELLED");
+
+        when(orderRepository.findByIdAndUser_Email(10L, EMAIL))
+                .thenReturn(Optional.of(order));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> razorpayPaymentService.verifyPayment(request, EMAIL)
+        );
+
+        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+        assertEquals(
+                "Order is not awaiting payment",
+                exception.getReason()
+        );
+        verify(orderRepository, never()).save(order);
+    }
+
+    @Test
+    void createPaymentOrder_shouldRejectInactiveProduct() {
+        Cart cart = org.mockito.Mockito.mock(Cart.class);
+        CartItem cartItem = org.mockito.Mockito.mock(CartItem.class);
+        Product product = org.mockito.Mockito.mock(Product.class);
+        Address address = new Address();
+
+        when(addressRepository.findByIdAndUser_Email(7L, EMAIL))
+                .thenReturn(Optional.of(address));
+        when(cartRepository.findByIdAndUser_Email(2L, EMAIL))
+                .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(
+                org.mockito.Mockito.mock(User.class));
+        when(cart.getItems()).thenReturn(List.of(cartItem));
+        when(cartItem.getProduct()).thenReturn(product);
+        when(product.isActive()).thenReturn(false);
+        when(product.getName()).thenReturn("Old T-Shirt");
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> razorpayPaymentService.createPaymentOrder(
+                        2L, EMAIL, 7L)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    @Test
+    void createPaymentOrder_shouldRequireDeliveryAddress() {
+        Cart cart = org.mockito.Mockito.mock(Cart.class);
+        CartItem cartItem = org.mockito.Mockito.mock(CartItem.class);
+
+        when(cartRepository.findByIdAndUser_Email(2L, EMAIL))
+                .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(
+                org.mockito.Mockito.mock(User.class));
+        when(cart.getItems()).thenReturn(List.of(cartItem));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> razorpayPaymentService.createPaymentOrder(
+                        2L, EMAIL, null)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        assertEquals(
+                "Delivery address is required", exception.getReason());
+        verify(orderRepository, never()).save(any(Order.class));
     }
 }
