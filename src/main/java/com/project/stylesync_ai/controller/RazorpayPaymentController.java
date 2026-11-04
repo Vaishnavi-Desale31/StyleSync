@@ -2,6 +2,7 @@ package com.project.stylesync_ai.controller;
 
 import com.project.stylesync_ai.dto.RazorpayOrderResponse;
 import com.project.stylesync_ai.dto.RazorpayVerifyRequest;
+import com.project.stylesync_ai.dto.CheckoutRequest;
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.service.RazorpayPaymentService;
 import org.springframework.http.HttpStatus;
@@ -23,10 +24,13 @@ public class RazorpayPaymentController {
     @ResponseStatus(HttpStatus.CREATED)
     public RazorpayOrderResponse createPaymentOrder(
             @PathVariable Long cartId,
+            @RequestBody(required = false) CheckoutRequest request,
             Authentication authentication) {
 
         return paymentService.createPaymentOrder(
-                cartId, authentication.getName());
+                cartId,
+                authentication.getName(),
+                request == null ? null : request.getAddressId());
     }
 
     @PostMapping("/verify")

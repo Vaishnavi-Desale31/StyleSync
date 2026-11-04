@@ -4,6 +4,7 @@ import com.project.stylesync_ai.entity.Cart;
 import com.project.stylesync_ai.entity.CartItem;
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.entity.OrderItem;
+import com.project.stylesync_ai.repository.AddressRepository;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.OrderRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -27,15 +28,20 @@ public class DemoPaymentService {
     private final CartRepository cartRepository;
     private final OrderRepository orderRepository;
 
+    private final AddressRepository addressRepository;
+
     public DemoPaymentService(
             CartRepository cartRepository,
-            OrderRepository orderRepository) {
+            OrderRepository orderRepository,
+            AddressRepository addressRepository) {
         this.cartRepository = cartRepository;
         this.orderRepository = orderRepository;
+        this.addressRepository = addressRepository;
     }
 
     @Transactional
-    public Order createDemoOrder(Long cartId, String email) {
+    public Order createDemoOrder(
+            Long cartId, String email, Long addressId) {
 
         Cart cart = cartRepository.findByIdAndUser_Email(cartId, email)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -57,6 +63,9 @@ public class DemoPaymentService {
         order.setStatus("PAYMENT_PENDING");
         order.setPaymentMethod("DEMO");
         order.setPaymentStatus("PENDING");
+        order.applyDeliveryAddress(
+                DeliveryAddresses.require(
+                        addressRepository, addressId, email));
 
         for (CartItem cartItem : cart.getItems()) {
             BigDecimal price = cartItem.getProduct().getPrice();

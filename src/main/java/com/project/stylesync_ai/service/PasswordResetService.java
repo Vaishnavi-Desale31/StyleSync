@@ -81,7 +81,7 @@ public class PasswordResetService {
                 LocalDateTime.now().plusMinutes(TOKEN_VALID_MINUTES)));
 
         log.info("Password reset link for {} (valid {} minutes): "
-                        + "{}/reset-password.html?token={}",
+                        + "{}/resetpassword.html?token={}",
                 user.getEmail(), TOKEN_VALID_MINUTES, baseUrl, token);
     }
 

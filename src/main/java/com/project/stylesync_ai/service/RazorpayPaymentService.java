@@ -6,6 +6,7 @@ import com.project.stylesync_ai.entity.Cart;
 import com.project.stylesync_ai.entity.CartItem;
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.entity.OrderItem;
+import com.project.stylesync_ai.repository.AddressRepository;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.OrderRepository;
 import com.razorpay.RazorpayClient;
@@ -35,11 +36,15 @@ public class RazorpayPaymentService {
     @Value("${razorpay.key-secret:}")
     private String keySecret;
 
+    private final AddressRepository addressRepository;
+
     public RazorpayPaymentService(
             CartRepository cartRepository,
-            OrderRepository orderRepository) {
+            OrderRepository orderRepository,
+            AddressRepository addressRepository) {
         this.cartRepository = cartRepository;
         this.orderRepository = orderRepository;
+        this.addressRepository = addressRepository;
     }
 
     private void checkCredentials() {
@@ -54,7 +59,7 @@ public class RazorpayPaymentService {
 
     @Transactional
     public RazorpayOrderResponse createPaymentOrder(
-            Long cartId, String email) {
+            Long cartId, String email, Long addressId) {
 
         checkCredentials();
 
@@ -78,8 +83,19 @@ public class RazorpayPaymentService {
         order.setStatus("PAYMENT_PENDING");
         order.setPaymentMethod("RAZORPAY");
         order.setPaymentStatus("PENDING");
+        order.applyDeliveryAddress(
+                DeliveryAddresses.require(
+                        addressRepository, addressId, email));
 
         for (CartItem cartItem : cart.getItems()) {
+            if (!cartItem.getProduct().isActive()) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Product " + cartItem.getProduct().getName()
+                                + " is no longer available. "
+                                + "Please remove it from your cart.");
+            }
+
             BigDecimal price = cartItem.getProduct().getPrice();
 
             total = total.add(
@@ -203,6 +219,14 @@ public class RazorpayPaymentService {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Order has already been paid");
+        }
+
+        // Only an order that is still awaiting payment can be paid.
+        if (!"PAYMENT_PENDING".equals(order.getStatus())
+                || !"PENDING".equals(order.getPaymentStatus())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Order is not awaiting payment");
         }
 
         try {

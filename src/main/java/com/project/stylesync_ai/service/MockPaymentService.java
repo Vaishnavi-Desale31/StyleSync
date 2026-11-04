@@ -4,6 +4,7 @@ import com.project.stylesync_ai.entity.Cart;
 import com.project.stylesync_ai.entity.CartItem;
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.entity.OrderItem;
+import com.project.stylesync_ai.repository.AddressRepository;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.OrderRepository;
 
@@ -30,11 +31,15 @@ public class MockPaymentService {
     @Value("${payment.mock.enabled:false}")
     private boolean mockPaymentEnabled;
 
+    private final AddressRepository addressRepository;
+
     public MockPaymentService(
             CartRepository cartRepository,
-            OrderRepository orderRepository) {
+            OrderRepository orderRepository,
+            AddressRepository addressRepository) {
         this.cartRepository = cartRepository;
         this.orderRepository = orderRepository;
+        this.addressRepository = addressRepository;
     }
 
     private void checkMockPaymentEnabled() {
@@ -47,7 +52,8 @@ public class MockPaymentService {
     }
 
     @Transactional
-    public Order createMockPaymentOrder(Long cartId, String email) {
+    public Order createMockPaymentOrder(
+            Long cartId, String email, Long addressId) {
 
         checkMockPaymentEnabled();
 
@@ -74,6 +80,9 @@ public class MockPaymentService {
                 "PAYMENT_PENDING",
                 "Waiting for mock payment"
         );
+        order.applyDeliveryAddress(
+                DeliveryAddresses.require(
+                        addressRepository, addressId, email));
 
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
