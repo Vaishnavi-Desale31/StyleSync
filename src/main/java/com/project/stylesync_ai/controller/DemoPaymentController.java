@@ -1,5 +1,6 @@
 package com.project.stylesync_ai.controller;
 
+import com.project.stylesync_ai.dto.CheckoutRequest;
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.service.DemoPaymentService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -25,10 +26,13 @@ public class DemoPaymentController {
     @ResponseStatus(HttpStatus.CREATED)
     public Order createDemoOrder(
             @PathVariable Long cartId,
+            @RequestBody(required = false) CheckoutRequest request,
             Authentication authentication) {
 
         return demoPaymentService.createDemoOrder(
-                cartId, authentication.getName());
+                cartId,
+                authentication.getName(),
+                request == null ? null : request.getAddressId());
     }
 
     @PostMapping("/orders/{orderId}/success")
