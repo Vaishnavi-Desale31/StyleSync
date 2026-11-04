@@ -35,6 +35,15 @@ public class DemoPaymentController {
                 request == null ? null : request.getAddressId());
     }
 
+    @PostMapping("/orders/{orderId}/retry")
+    public Order retryDemoPayment(
+            @PathVariable Long orderId,
+            Authentication authentication) {
+
+        return demoPaymentService.retryDemoPayment(
+                orderId, authentication.getName());
+    }
+
     @PostMapping("/orders/{orderId}/success")
     public Order simulateSuccess(
             @PathVariable Long orderId,
