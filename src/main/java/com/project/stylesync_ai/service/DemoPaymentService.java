@@ -60,15 +60,33 @@ public class DemoPaymentService {
         order.setUser(cart.getUser());
         order.setCartId(cartId);
         order.setOrderDate(LocalDateTime.now());
-        order.setStatus("PAYMENT_PENDING");
-        order.setPaymentMethod("DEMO");
+        order.recordStatus(
+                "PAYMENT_PENDING",
+                "Demo payment initiated"
+        );        order.setPaymentMethod("DEMO");
         order.setPaymentStatus("PENDING");
         order.applyDeliveryAddress(
                 DeliveryAddresses.require(
                         addressRepository, addressId, email));
 
         for (CartItem cartItem : cart.getItems()) {
+
+            if (!cartItem.getProduct().isActive()) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Product is no longer available: "
+                                + cartItem.getProduct().getName());
+            }
+
             BigDecimal price = cartItem.getProduct().getPrice();
+
+            if (price == null || price.compareTo(BigDecimal.ZERO) < 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Invalid product price: "
+                                + cartItem.getProduct().getName()
+                );
+            }
 
             total = total.add(price.multiply(
                     BigDecimal.valueOf(cartItem.getQuantity())));
@@ -91,6 +109,30 @@ public class DemoPaymentService {
     }
 
     @Transactional
+    public Order retryDemoPayment(Long orderId, String email) {
+
+        Order order = findDemoOrder(orderId, email);
+
+        if (!"PAYMENT_FAILED".equals(order.getStatus())
+                || !"FAILED".equals(order.getPaymentStatus())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Only failed demo orders can retry payment"
+            );
+        }
+
+        order.setPaymentStatus("PENDING");
+
+        order.recordStatus(
+                "PAYMENT_PENDING",
+                "Demo payment retry initiated"
+        );
+
+        return orderRepository.save(order);
+    }
+
+    @Transactional
     public Order simulateSuccess(Long orderId, String email) {
 
         Order order = findDemoOrder(orderId, email);
@@ -106,7 +148,11 @@ public class DemoPaymentService {
         }
 
         order.setPaymentStatus("PAID");
-        order.setStatus("PLACED");
+
+        order.recordStatus(
+                "PLACED",
+                "Demo payment completed successfully"
+        );
 
         Order savedOrder = orderRepository.save(order);
 
@@ -138,7 +184,11 @@ public class DemoPaymentService {
         }
 
         order.setPaymentStatus("FAILED");
-        order.setStatus("PAYMENT_FAILED");
+
+        order.recordStatus(
+                "PAYMENT_FAILED",
+                "Demo payment failed"
+        );
 
         return orderRepository.save(order);
     }

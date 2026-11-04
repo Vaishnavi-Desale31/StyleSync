@@ -5,9 +5,7 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
-/**
- * One entry in an order's tracking timeline.
- */
+
 @Entity
 @Table(name = "order_status_events")
 public class OrderStatusEvent {

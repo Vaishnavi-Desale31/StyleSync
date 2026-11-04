@@ -1397,8 +1397,7 @@
                         addToCartButton.textContent = "Try Again";
 
                         alert(
-                            "Could not add this product to your cart. " +
-                            "Please try again."
+                            "Add to Cart Error: " + error.message
                         );
                     } finally {
                         addToCartButton.disabled = false;
@@ -2352,6 +2351,80 @@
             console.error("Cancel order error:", error);
             alert("Could not cancel this order. " + error.message);
         }
+
+    }
+
+    async function retryDemoPayment(orderId) {
+        const token = sessionStorage.getItem("accessToken");
+        const checkoutStatus = document.getElementById("checkout-status");
+
+        if (!token) {
+            window.location.href = "/login.html";
+            return;
+        }
+
+        try {
+            const headers = {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            };
+
+            const retryResponse = await fetch(
+                `/api/payments/demo/orders/${encodeURIComponent(orderId)}/retry`,
+                {
+                    method: "POST",
+                    headers: headers
+                }
+            );
+
+            if (retryResponse.status === 401) {
+                sessionStorage.removeItem("accessToken");
+                sessionStorage.removeItem("cartId");
+                window.location.href = "/login.html";
+                return;
+            }
+
+            if (!retryResponse.ok) {
+                throw new Error(await retryResponse.text());
+            }
+
+            const order = await retryResponse.json();
+
+            const succeed = confirm(
+                "Retry demo payment for Order #" + order.id + "?\n\n" +
+                "OK = Simulate successful payment\n" +
+                "Cancel = Simulate failed payment"
+            );
+
+            const resultResponse = await fetch(
+                `/api/payments/demo/orders/${encodeURIComponent(orderId)}/` +
+                (succeed ? "success" : "failure"),
+                {
+                    method: "POST",
+                    headers: headers
+                }
+            );
+
+            if (!resultResponse.ok) {
+                throw new Error(await resultResponse.text());
+            }
+
+            const result = await resultResponse.json();
+
+            checkoutStatus.textContent = succeed
+                ? "Retry payment successful! Order ID: " + result.id
+                : "Retry payment failed. Order #" + result.id +
+                " remains in PAYMENT_FAILED status.";
+
+            await loadCart();
+            await loadOrders();
+
+        } catch (error) {
+            console.error("Retry payment error:", error);
+
+            checkoutStatus.textContent =
+                "Retry payment problem: " + error.message;
+        }
     }
 
     // ---------- Delivery address (chosen at checkout) ----------
@@ -2597,6 +2670,32 @@
                     cancelButton.addEventListener(
                         "click", () => cancelOrder(order.id));
                     card.appendChild(cancelButton);
+                }
+
+                if (
+                    order.paymentMethod === "DEMO" &&
+                    order.paymentStatus === "FAILED" &&
+                    order.status === "PAYMENT_FAILED"
+                ) {
+                    const retryButton = document.createElement("button");
+
+                    retryButton.type = "button";
+                    retryButton.className = "button";
+                    retryButton.textContent = "Retry Payment";
+
+                    retryButton.addEventListener("click", async () => {
+                        retryButton.disabled = true;
+                        retryButton.textContent = "Processing...";
+
+                        try {
+                            await retryDemoPayment(order.id);
+                        } finally {
+                            retryButton.disabled = false;
+                            retryButton.textContent = "Retry Payment";
+                        }
+                    });
+
+                    card.appendChild(retryButton);
                 }
 
                 ordersList.appendChild(card);
