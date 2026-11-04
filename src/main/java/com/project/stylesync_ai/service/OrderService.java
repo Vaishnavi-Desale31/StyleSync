@@ -6,6 +6,7 @@ import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.entity.OrderItem;
 import com.project.stylesync_ai.entity.Product;
 import com.project.stylesync_ai.entity.User;
+import com.project.stylesync_ai.repository.AddressRepository;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.OrderRepository;
 import com.project.stylesync_ai.repository.ProductRepository;
@@ -29,29 +30,36 @@ public class OrderService {
     private CartRepository cartRepository;
     private ProductRepository productRepository;
     private UserRepository userRepository;
+    private AddressRepository addressRepository;
 
     public OrderService(OrderRepository orderRepository,
                         CartRepository cartRepository,
                         ProductRepository productRepository,
-                        UserRepository userRepository){
+                        UserRepository userRepository,
+                        AddressRepository addressRepository){
         this.orderRepository = orderRepository;
         this.cartRepository = cartRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.addressRepository = addressRepository;
     }
 
     @Transactional
-    public Order createOrderFromCart(Long cartId, String email) {
-        return createOrderFromCartInternal(cartId, email, null, null);
+    public Order createOrderFromCart(
+            Long cartId, String email, Long addressId) {
+        return createOrderFromCartInternal(
+                cartId, email, null, null, addressId);
     }
 
     @Transactional
-    public Order createCodOrderFromCart(Long cartId, String email) {
+    public Order createCodOrderFromCart(
+            Long cartId, String email, Long addressId) {
         return createOrderFromCartInternal(
                 cartId,
                 email,
                 "COD",
-                "PENDING"
+                "PENDING",
+                addressId
         );
     }
 
@@ -59,7 +67,8 @@ public class OrderService {
             Long cartId,
             String email,
             String paymentMethod,
-            String paymentStatus) {
+            String paymentStatus,
+            Long addressId) {
 
         Cart cart = cartRepository.findByIdAndUser_Email(cartId, email)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -78,6 +87,9 @@ public class OrderService {
         order.setUser(cart.getUser());
         order.setOrderDate(LocalDateTime.now());
         order.recordStatus("PLACED", "Order placed");
+        order.applyDeliveryAddress(
+                DeliveryAddresses.require(
+                        addressRepository, addressId, email));
 
         if (paymentMethod != null) {
             order.setPaymentMethod(paymentMethod);
@@ -88,6 +100,8 @@ public class OrderService {
         List<OrderItem> orderItems = new ArrayList<>();
 
         for (CartItem cartItem : cart.getItems()) {
+            requireActive(cartItem.getProduct());
+
             OrderItem orderItem = new OrderItem();
 
             orderItem.setProductId(cartItem.getProduct().getId());
@@ -115,11 +129,23 @@ public class OrderService {
         return savedOrder;
     }
 
+    private static void requireActive(Product product) {
+        if (!product.isActive()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Product " + product.getName()
+                            + " is no longer available. "
+                            + "Please remove it from your cart."
+            );
+        }
+    }
+
     @Transactional
     public Order createCodOrderForProduct(
             Long productId,
             Integer quantity,
-            String email) {
+            String email,
+            Long addressId) {
 
         if (productId == null) {
             throw new ResponseStatusException(
@@ -147,6 +173,8 @@ public class OrderService {
                         "Product not found"
                 ));
 
+        requireActive(product);
+
         if (product.getPrice() == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -160,6 +188,9 @@ public class OrderService {
         order.recordStatus("PLACED", "Order placed");
         order.setPaymentMethod("COD");
         order.setPaymentStatus("PENDING");
+        order.applyDeliveryAddress(
+                DeliveryAddresses.require(
+                        addressRepository, addressId, email));
 
         OrderItem orderItem = new OrderItem();
         orderItem.setProductId(product.getId());

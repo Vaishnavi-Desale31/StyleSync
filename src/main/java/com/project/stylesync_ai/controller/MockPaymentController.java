@@ -1,12 +1,6 @@
-
-
-
-
-
-
-
 package com.project.stylesync_ai.controller;
 
+import com.project.stylesync_ai.dto.CheckoutRequest;
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.service.MockPaymentService;
 
@@ -29,11 +23,13 @@ public class MockPaymentController {
     @ResponseStatus(HttpStatus.CREATED)
     public Order createMockPaymentOrder(
             @PathVariable Long cartId,
+            @RequestBody(required = false) CheckoutRequest request,
             Authentication authentication) {
 
         return mockPaymentService.createMockPaymentOrder(
                 cartId,
-                authentication.getName()
+                authentication.getName(),
+                request == null ? null : request.getAddressId()
         );
     }
 
