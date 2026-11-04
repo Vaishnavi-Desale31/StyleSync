@@ -63,7 +63,7 @@
             <button type="button" class="secondary" id="orders-refresh">Refresh</button>
             <p class="status" id="orders-status" role="status"></p>
             <div class="scroll"><table>
-                <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th>Total</th>
+                <thead><tr><th>Order</th><th>Customer</th><th>Deliver to</th><th>Date</th><th>Total</th>
                     <th>Payment</th><th>Status</th><th>Update</th></tr></thead>
                 <tbody id="orders-body"></tbody>
             </table></div>
@@ -314,7 +314,11 @@
 
                 row.append(
                     orderCell,
-                    el("td", order.customerEmail || "—"),
+                    el("td", [order.customerName, order.customerEmail]
+                        .filter(Boolean).join(" · ") || "—"),
+                    el("td", [order.shipFullName, order.shipPhone, order.shipLine1,
+                        order.shipLine2, order.shipCity, order.shipState,
+                        order.shipPostalCode].filter(Boolean).join(", ") || "—"),
                     el("td", new Date(order.orderDate).toLocaleString()),
                     el("td", formatINR(order.totalAmount)),
                     el("td", (order.paymentMethod || "—") + " / " + (order.paymentStatus || "—")),

@@ -1,10 +1,12 @@
 package com.project.stylesync_ai;
 
 import java.math.BigDecimal;
+import com.project.stylesync_ai.entity.Address;
 import com.project.stylesync_ai.entity.Cart;
 import com.project.stylesync_ai.entity.CartItem;
 import com.project.stylesync_ai.entity.Product;
 import com.project.stylesync_ai.entity.User;
+import com.project.stylesync_ai.repository.AddressRepository;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.OrderRepository;
 import com.project.stylesync_ai.repository.ProductRepository;
@@ -43,7 +45,24 @@ class OrderTransactionIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private AddressRepository addressRepository;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    private Address saveAddress(User user) {
+        Address address = new Address();
+        address.setUser(user);
+        address.setLabel("Home");
+        address.setFullName("Rahul Sharma");
+        address.setPhone("9876543210");
+        address.setLine1("12 MG Road");
+        address.setCity("Thane");
+        address.setState("Maharashtra");
+        address.setPostalCode("400601");
+        address.setCountry("India");
+        return addressRepository.saveAndFlush(address);
+    }
 
     @MockitoSpyBean
     private CartRepository cartRepositorySpy;
@@ -96,6 +115,8 @@ class OrderTransactionIntegrationTest {
         cart = cartRepository.saveAndFlush(cart);
         Long cartId = cart.getId();
 
+        Address address = saveAddress(savedUser);
+
         // 4. Record the database state before checkout.
         long ordersBefore = orderRepository.count();
 
@@ -122,7 +143,8 @@ class OrderTransactionIntegrationTest {
         // 6. Checkout should throw an exception.
         assertThrows(
                 IllegalStateException.class,
-                () -> orderService.createOrderFromCart(cartId, testEmail)
+                () -> orderService.createOrderFromCart(
+                        cartId, testEmail, address.getId())
         );
 
         // 7. Verify that the order was rolled back.
@@ -196,8 +218,10 @@ class OrderTransactionIntegrationTest {
         cart = cartRepository.saveAndFlush(cart);
         Long cartId = cart.getId();
 
-        Order savedOrder =
-                orderService.createOrderFromCart(cartId, testEmail);
+        Address address = saveAddress(user);
+
+        Order savedOrder = orderService.createOrderFromCart(
+                cartId, testEmail, address.getId());
 
         assertNotNull(savedOrder.getId());
         assertEquals("PLACED", savedOrder.getStatus());
@@ -226,5 +250,56 @@ class OrderTransactionIntegrationTest {
         );
 
         assertEquals(0, remainingCartItems);
+    }
+
+    @Test
+    void orderKeepsDeliveryAddressSnapshotAfterSavedAddressIsEdited() {
+
+        String testEmail = "snapshot-test-" + UUID.randomUUID()
+                + "@example.com";
+
+        User user = userRepository.saveAndFlush(
+                new User("Rahul Sharma", testEmail, "encoded-test-password"));
+
+        Product product = productRepository.saveAndFlush(
+                new Product(
+                        "Snapshot Test T-shirt",
+                        "Product for address snapshot testing",
+                        new BigDecimal("500.00"),
+                        "TestBrand",
+                        null,
+                        "M",
+                        "Black",
+                        null
+                )
+        );
+
+        Cart cart = new Cart();
+        cart.setUser(user);
+        CartItem cartItem = new CartItem();
+        cartItem.setProduct(product);
+        cartItem.setQuantity(1);
+        cart.addItem(cartItem);
+        cart = cartRepository.saveAndFlush(cart);
+
+        Address address = saveAddress(user);
+
+        Order order = orderService.createOrderFromCart(
+                cart.getId(), testEmail, address.getId());
+
+        // The customer edits the saved address after ordering.
+        address.setCity("Pune");
+        address.setPostalCode("411001");
+        addressRepository.saveAndFlush(address);
+
+        String city = jdbcTemplate.queryForObject(
+                "SELECT ship_city FROM orders WHERE id = ?",
+                String.class, order.getId());
+        String postalCode = jdbcTemplate.queryForObject(
+                "SELECT ship_postal_code FROM orders WHERE id = ?",
+                String.class, order.getId());
+
+        assertEquals("Thane", city);
+        assertEquals("400601", postalCode);
     }
 }
