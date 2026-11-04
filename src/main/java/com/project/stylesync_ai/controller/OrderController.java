@@ -1,8 +1,8 @@
 package com.project.stylesync_ai.controller;
 
-
 import com.project.stylesync_ai.dto.BuyNowRequest;
 import com.project.stylesync_ai.dto.CancelOrderRequest;
+import com.project.stylesync_ai.dto.CheckoutRequest;
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.service.OrderService;
 import org.springframework.http.HttpStatus;
@@ -25,10 +25,12 @@ public class OrderController {
     @ResponseStatus(HttpStatus.CREATED)
     public Order createCodOrder(
             @PathVariable Long cartId,
+            @RequestBody(required = false) CheckoutRequest request,
             Authentication authentication) {
         return orderService.createCodOrderFromCart(
                 cartId,
-                authentication.getName());
+                authentication.getName(),
+                request == null ? null : request.getAddressId());
     }
 
     @PostMapping("/buy-now")
@@ -39,7 +41,8 @@ public class OrderController {
         return orderService.createCodOrderForProduct(
                 request.getProductId(),
                 request.getQuantity(),
-                authentication.getName());
+                authentication.getName(),
+                request.getAddressId());
     }
 
     @PostMapping("/{orderId}/cancel")

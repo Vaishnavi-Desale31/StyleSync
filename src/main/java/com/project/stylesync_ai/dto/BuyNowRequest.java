@@ -4,8 +4,17 @@ public class BuyNowRequest {
 
     private Long productId;
     private Integer quantity;
+    private Long addressId;
 
     public BuyNowRequest() {
+    }
+
+    public Long getAddressId() {
+        return addressId;
+    }
+
+    public void setAddressId(Long addressId) {
+        this.addressId = addressId;
     }
 
     public Long getProductId() {
