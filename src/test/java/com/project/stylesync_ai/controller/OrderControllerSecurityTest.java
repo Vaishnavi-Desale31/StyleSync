@@ -105,14 +105,16 @@ class OrderControllerSecurityTest {
         when(userDetailsService.loadUserByUsername(email))
                 .thenReturn(userDetails);
         when(jwtConfig.isTokenValid(token, userDetails)).thenReturn(true);
-        when(orderService.createCodOrderFromCart(3L, email))
+        when(orderService.createCodOrderFromCart(3L, email, 7L))
                 .thenReturn(order);
 
         mockMvc.perform(post("/api/orders/cod/3")
-                        .header("Authorization", "Bearer " + token))
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content("{\"addressId\":7}"))
                 .andExpect(status().isCreated());
 
-        verify(orderService).createCodOrderFromCart(3L, email);
+        verify(orderService).createCodOrderFromCart(3L, email, 7L);
     }
 
     @Test
@@ -139,16 +141,16 @@ class OrderControllerSecurityTest {
         when(userDetailsService.loadUserByUsername(email))
                 .thenReturn(userDetails);
         when(jwtConfig.isTokenValid(token, userDetails)).thenReturn(true);
-        when(orderService.createCodOrderForProduct(5L, 2, email))
+        when(orderService.createCodOrderForProduct(5L, 2, email, 7L))
                 .thenReturn(new Order());
 
         mockMvc.perform(post("/api/orders/buy-now")
                         .header("Authorization", "Bearer " + token)
                         .contentType("application/json")
-                        .content("{\"productId\":5,\"quantity\":2}"))
+                        .content("{\"productId\":5,\"quantity\":2,\"addressId\":7}"))
                 .andExpect(status().isCreated());
 
-        verify(orderService).createCodOrderForProduct(5L, 2, email);
+        verify(orderService).createCodOrderForProduct(5L, 2, email, 7L);
     }
 
 }

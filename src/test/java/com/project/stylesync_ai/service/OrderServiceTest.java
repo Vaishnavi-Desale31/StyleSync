@@ -1,16 +1,19 @@
 package com.project.stylesync_ai.service;
 import java.math.BigDecimal;
 
+import com.project.stylesync_ai.entity.Address;
 import com.project.stylesync_ai.entity.Cart;
 import com.project.stylesync_ai.entity.CartItem;
 import com.project.stylesync_ai.entity.Order;
 import com.project.stylesync_ai.entity.OrderItem;
 import com.project.stylesync_ai.entity.Product;
 import com.project.stylesync_ai.entity.User;
+import com.project.stylesync_ai.repository.AddressRepository;
 import com.project.stylesync_ai.repository.CartRepository;
 import com.project.stylesync_ai.repository.OrderRepository;
 import com.project.stylesync_ai.repository.ProductRepository;
 import com.project.stylesync_ai.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,6 +32,7 @@ import static org.mockito.Mockito.*;
 class OrderServiceTest {
 
     private static final String TEST_EMAIL = "vaishnavi@example.com";
+    private static final Long ADDRESS_ID = 7L;
 
     @Mock
     private OrderRepository orderRepository;
@@ -42,11 +46,38 @@ class OrderServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private AddressRepository addressRepository;
+
     @InjectMocks
     private OrderService orderService;
 
     private User createTestUser() {
         return new User("Test User", TEST_EMAIL, "encoded-password");
+    }
+
+    private Address createTestAddress() {
+        Address address = new Address();
+        address.setLabel("Home");
+        address.setFullName("Rahul Sharma");
+        address.setPhone("9876543210");
+        address.setLine1("12 MG Road");
+        address.setLine2("Near Station");
+        address.setCity("Thane");
+        address.setState("Maharashtra");
+        address.setPostalCode("400601");
+        address.setCountry("India");
+        return address;
+    }
+
+    // Every test can find the user's saved address 7 unless it
+    // overrides this. lenient() because some tests fail before the
+    // address is looked up.
+    @BeforeEach
+    void stubSavedAddress() {
+        lenient().when(addressRepository
+                        .findByIdAndUser_Email(ADDRESS_ID, TEST_EMAIL))
+                .thenReturn(Optional.of(createTestAddress()));
     }
 
     // 1. Successful checkout with one product
@@ -55,6 +86,7 @@ class OrderServiceTest {
         Cart cart = mock(Cart.class);
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
+        lenient().when(product.isActive()).thenReturn(true);
         User user = createTestUser();
 
         when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
@@ -71,7 +103,7 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Order result = orderService.createOrderFromCart(3L, TEST_EMAIL);
+        Order result = orderService.createOrderFromCart(3L, TEST_EMAIL, ADDRESS_ID);
 
         assertNotNull(result);
         assertEquals("PLACED", result.getStatus());
@@ -100,7 +132,7 @@ class OrderServiceTest {
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> orderService.createOrderFromCart(99L, TEST_EMAIL)
+                () -> orderService.createOrderFromCart(99L, TEST_EMAIL, ADDRESS_ID)
         );
 
         assertEquals(404, exception.getStatusCode().value());
@@ -120,7 +152,7 @@ class OrderServiceTest {
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> orderService.createOrderFromCart(3L, anotherUserEmail)
+                () -> orderService.createOrderFromCart(3L, anotherUserEmail, ADDRESS_ID)
         );
 
         assertEquals(404, exception.getStatusCode().value());
@@ -143,7 +175,7 @@ class OrderServiceTest {
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> orderService.createOrderFromCart(3L, TEST_EMAIL)
+                () -> orderService.createOrderFromCart(3L, TEST_EMAIL, ADDRESS_ID)
         );
 
         assertEquals(400, exception.getStatusCode().value());
@@ -168,7 +200,7 @@ class OrderServiceTest {
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> orderService.createOrderFromCart(3L, TEST_EMAIL)
+                () -> orderService.createOrderFromCart(3L, TEST_EMAIL, ADDRESS_ID)
         );
 
         assertEquals(400, exception.getStatusCode().value());
@@ -189,7 +221,10 @@ class OrderServiceTest {
         CartItem jeansItem = mock(CartItem.class);
 
         Product tshirt = mock(Product.class);
+
+        lenient().when(tshirt.isActive()).thenReturn(true);
         Product jeans = mock(Product.class);
+        lenient().when(jeans.isActive()).thenReturn(true);
 
         when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
@@ -212,7 +247,7 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Order result = orderService.createOrderFromCart(3L, TEST_EMAIL);
+        Order result = orderService.createOrderFromCart(3L, TEST_EMAIL, ADDRESS_ID);
 
         // (2 * 799) + (1 * 1299) = 2897
         assertEquals(0, new BigDecimal("2897.00").compareTo(result.getTotalAmount()));
@@ -227,6 +262,7 @@ class OrderServiceTest {
         Cart cart = mock(Cart.class);
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
+        lenient().when(product.isActive()).thenReturn(true);
 
         when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
@@ -242,7 +278,7 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Order result = orderService.createOrderFromCart(3L, TEST_EMAIL);
+        Order result = orderService.createOrderFromCart(3L, TEST_EMAIL, ADDRESS_ID);
 
         assertNotNull(result);
         verify(cart).clearItems();
@@ -255,6 +291,7 @@ class OrderServiceTest {
         Cart cart = mock(Cart.class);
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
+        lenient().when(product.isActive()).thenReturn(true);
 
         when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
@@ -270,7 +307,7 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        orderService.createOrderFromCart(3L, TEST_EMAIL);
+        orderService.createOrderFromCart(3L, TEST_EMAIL, ADDRESS_ID);
 
         var order = inOrder(orderRepository, cart, cartRepository);
 
@@ -285,6 +322,7 @@ class OrderServiceTest {
         Cart cart = mock(Cart.class);
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
+        lenient().when(product.isActive()).thenReturn(true);
 
         when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
@@ -300,7 +338,7 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Order result = orderService.createOrderFromCart(3L, TEST_EMAIL);
+        Order result = orderService.createOrderFromCart(3L, TEST_EMAIL, ADDRESS_ID);
 
         assertEquals(0, new BigDecimal("799.00").compareTo(result.getItems().get(0).getPrice()));
         assertEquals(0, new BigDecimal("1598.00").compareTo(result.getTotalAmount()));
@@ -312,6 +350,7 @@ class OrderServiceTest {
         Cart cart = mock(Cart.class);
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
+        lenient().when(product.isActive()).thenReturn(true);
 
         when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
@@ -329,7 +368,7 @@ class OrderServiceTest {
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
-                () -> orderService.createOrderFromCart(3L, TEST_EMAIL)
+                () -> orderService.createOrderFromCart(3L, TEST_EMAIL, ADDRESS_ID)
         );
 
         assertEquals("Database save failed", exception.getMessage());
@@ -344,6 +383,7 @@ class OrderServiceTest {
         Cart cart = mock(Cart.class);
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
+        lenient().when(product.isActive()).thenReturn(true);
 
         when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
@@ -364,7 +404,7 @@ class OrderServiceTest {
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
-                () -> orderService.createOrderFromCart(3L, TEST_EMAIL)
+                () -> orderService.createOrderFromCart(3L, TEST_EMAIL, ADDRESS_ID)
         );
 
         assertEquals("Cart save failed", exception.getMessage());
@@ -381,6 +421,7 @@ class OrderServiceTest {
         Cart cart = mock(Cart.class);
         CartItem cartItem = mock(CartItem.class);
         Product product = mock(Product.class);
+        lenient().when(product.isActive()).thenReturn(true);
 
         when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
                 .thenReturn(Optional.of(cart));
@@ -397,7 +438,7 @@ class OrderServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         Order result = orderService.createCodOrderFromCart(
-                3L, TEST_EMAIL);
+                3L, TEST_EMAIL, ADDRESS_ID);
 
         assertNotNull(result);
         assertEquals("PLACED", result.getStatus());
@@ -479,6 +520,7 @@ class OrderServiceTest {
     void createCodOrderForProduct_shouldUseDatabasePriceAndNotTouchCart() {
         User user = createTestUser();
         Product product = mock(Product.class);
+        lenient().when(product.isActive()).thenReturn(true);
 
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(productRepository.findById(2L)).thenReturn(Optional.of(product));
@@ -488,7 +530,7 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Order result = orderService.createCodOrderForProduct(2L, 3, TEST_EMAIL);
+        Order result = orderService.createCodOrderForProduct(2L, 3, TEST_EMAIL, ADDRESS_ID);
 
         assertEquals("PLACED", result.getStatus());
         assertEquals("COD", result.getPaymentMethod());
@@ -512,7 +554,7 @@ class OrderServiceTest {
         for (Integer bad : new Integer[]{null, 0, -1}) {
             ResponseStatusException ex = assertThrows(
                     ResponseStatusException.class,
-                    () -> orderService.createCodOrderForProduct(2L, bad, TEST_EMAIL));
+                    () -> orderService.createCodOrderForProduct(2L, bad, TEST_EMAIL, ADDRESS_ID));
             assertEquals(400, ex.getStatusCode().value());
         }
         verifyNoInteractions(orderRepository, cartRepository);
@@ -526,7 +568,7 @@ class OrderServiceTest {
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> orderService.createCodOrderForProduct(99L, 1, TEST_EMAIL));
+                () -> orderService.createCodOrderForProduct(99L, 1, TEST_EMAIL, ADDRESS_ID));
 
         assertEquals(404, ex.getStatusCode().value());
         verify(orderRepository, never()).save(any());
@@ -535,6 +577,7 @@ class OrderServiceTest {
     @Test
     void createCodOrderForProduct_shouldRejectProductWithoutPrice() {
         Product product = mock(Product.class);
+        lenient().when(product.isActive()).thenReturn(true);
         when(userRepository.findByEmail(TEST_EMAIL))
                 .thenReturn(Optional.of(createTestUser()));
         when(productRepository.findById(2L)).thenReturn(Optional.of(product));
@@ -542,10 +585,187 @@ class OrderServiceTest {
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> orderService.createCodOrderForProduct(2L, 1, TEST_EMAIL));
+                () -> orderService.createCodOrderForProduct(2L, 1, TEST_EMAIL, ADDRESS_ID));
 
         assertEquals(400, ex.getStatusCode().value());
         verify(orderRepository, never()).save(any());
+    }
+
+
+    // ---------- Delivery address snapshot ----------
+
+    @Test
+    void createOrderFromCart_shouldCopyCustomerAndAddressOntoOrder() {
+        Cart cart = mock(Cart.class);
+        CartItem cartItem = mock(CartItem.class);
+        Product product = mock(Product.class);
+        lenient().when(product.isActive()).thenReturn(true);
+        User user = new User("Rahul Sharma", TEST_EMAIL, "encoded-password");
+
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
+                .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(user);
+        when(cart.getItems()).thenReturn(List.of(cartItem));
+        when(cartItem.getProduct()).thenReturn(product);
+        when(cartItem.getQuantity()).thenReturn(1);
+        when(product.getId()).thenReturn(2L);
+        when(product.getName()).thenReturn("Premium Black T-Shirt");
+        when(product.getPrice()).thenReturn(new BigDecimal("799.00"));
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Order result = orderService.createOrderFromCart(
+                3L, TEST_EMAIL, ADDRESS_ID);
+
+        assertEquals("Rahul Sharma", result.getCustomerName());
+        assertEquals(TEST_EMAIL, result.getCustomerEmail());
+        assertEquals("Rahul Sharma", result.getShipFullName());
+        assertEquals("9876543210", result.getShipPhone());
+        assertEquals("12 MG Road", result.getShipLine1());
+        assertEquals("Near Station", result.getShipLine2());
+        assertEquals("Thane", result.getShipCity());
+        assertEquals("Maharashtra", result.getShipState());
+        assertEquals("400601", result.getShipPostalCode());
+        assertEquals("India", result.getShipCountry());
+    }
+
+    @Test
+    void createOrderFromCart_shouldKeepSnapshotWhenSavedAddressIsEditedLater() {
+        Cart cart = mock(Cart.class);
+        CartItem cartItem = mock(CartItem.class);
+        Product product = mock(Product.class);
+        lenient().when(product.isActive()).thenReturn(true);
+        Address saved = createTestAddress();
+
+        when(addressRepository.findByIdAndUser_Email(ADDRESS_ID, TEST_EMAIL))
+                .thenReturn(Optional.of(saved));
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
+                .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(createTestUser());
+        when(cart.getItems()).thenReturn(List.of(cartItem));
+        when(cartItem.getProduct()).thenReturn(product);
+        when(cartItem.getQuantity()).thenReturn(1);
+        when(product.getId()).thenReturn(2L);
+        when(product.getName()).thenReturn("Premium Black T-Shirt");
+        when(product.getPrice()).thenReturn(new BigDecimal("799.00"));
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Order result = orderService.createOrderFromCart(
+                3L, TEST_EMAIL, ADDRESS_ID);
+
+        // The customer edits the saved address after ordering.
+        saved.setCity("Pune");
+        saved.setPostalCode("411001");
+
+        assertEquals("Thane", result.getShipCity());
+        assertEquals("400601", result.getShipPostalCode());
+    }
+
+    @Test
+    void createOrderFromCart_shouldReturn400WhenAddressIdIsMissing() {
+        Cart cart = mock(Cart.class);
+        CartItem cartItem = mock(CartItem.class);
+
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
+                .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(createTestUser());
+        when(cart.getItems()).thenReturn(List.of(cartItem));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.createOrderFromCart(3L, TEST_EMAIL, null));
+
+        assertEquals(400, ex.getStatusCode().value());
+        assertEquals("Delivery address is required", ex.getReason());
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void createOrderFromCart_shouldReturn404ForAnotherUsersAddress() {
+        Cart cart = mock(Cart.class);
+        CartItem cartItem = mock(CartItem.class);
+
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
+                .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(createTestUser());
+        when(cart.getItems()).thenReturn(List.of(cartItem));
+        when(addressRepository.findByIdAndUser_Email(99L, TEST_EMAIL))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.createOrderFromCart(3L, TEST_EMAIL, 99L));
+
+        assertEquals(404, ex.getStatusCode().value());
+        assertEquals("Delivery address not found", ex.getReason());
+        verify(orderRepository, never()).save(any());
+    }
+
+    // ---------- Inactive products ----------
+
+    @Test
+    void createOrderFromCart_shouldRejectInactiveProduct() {
+        Cart cart = mock(Cart.class);
+        CartItem cartItem = mock(CartItem.class);
+        Product product = mock(Product.class);
+
+        when(cartRepository.findByIdAndUser_Email(3L, TEST_EMAIL))
+                .thenReturn(Optional.of(cart));
+        when(cart.getUser()).thenReturn(createTestUser());
+        when(cart.getItems()).thenReturn(List.of(cartItem));
+        when(cartItem.getProduct()).thenReturn(product);
+        when(product.isActive()).thenReturn(false);
+        when(product.getName()).thenReturn("Old T-Shirt");
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.createOrderFromCart(
+                        3L, TEST_EMAIL, ADDRESS_ID));
+
+        assertEquals(400, ex.getStatusCode().value());
+        verify(orderRepository, never()).save(any());
+        verify(cart, never()).clearItems();
+    }
+
+    @Test
+    void createCodOrderForProduct_shouldRejectInactiveProduct() {
+        Product product = mock(Product.class);
+
+        when(userRepository.findByEmail(TEST_EMAIL))
+                .thenReturn(Optional.of(createTestUser()));
+        when(productRepository.findById(2L)).thenReturn(Optional.of(product));
+        when(product.isActive()).thenReturn(false);
+        when(product.getName()).thenReturn("Old T-Shirt");
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> orderService.createCodOrderForProduct(
+                        2L, 1, TEST_EMAIL, ADDRESS_ID));
+
+        assertEquals(400, ex.getStatusCode().value());
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void createCodOrderForProduct_shouldCopyAddressOntoOrder() {
+        Product product = mock(Product.class);
+        lenient().when(product.isActive()).thenReturn(true);
+
+        when(userRepository.findByEmail(TEST_EMAIL))
+                .thenReturn(Optional.of(createTestUser()));
+        when(productRepository.findById(2L)).thenReturn(Optional.of(product));
+        when(product.getId()).thenReturn(2L);
+        when(product.getName()).thenReturn("Premium Black T-Shirt");
+        when(product.getPrice()).thenReturn(new BigDecimal("799.00"));
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Order result = orderService.createCodOrderForProduct(
+                2L, 1, TEST_EMAIL, ADDRESS_ID);
+
+        assertEquals("Thane", result.getShipCity());
+        assertEquals("400601", result.getShipPostalCode());
     }
 
     // ---------- Cancellation and delivery status ----------
