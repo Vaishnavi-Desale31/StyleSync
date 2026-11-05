@@ -101,3 +101,29 @@ A missing `addressId` returns **400**. An address that does not exist or belongs
 - Password reset emails are not sent yet. The reset link is only written to the application log.
 - More tests are needed for account/address management, admin order management and the password reset flow.
 - AI-based style suggestions and cloud deployment are planned.
+
+## Screenshots
+
+### Landing Page
+![Landing page](docs/screenshots/front.png)
+
+### Home / Product Listing
+![Home page](docs/screenshots/home.png)
+
+### Product Details
+![Product details](docs/screenshots/product.png)
+
+### Cart
+![Cart](docs/screenshots/cart.png)
+
+### Checkout - Cash on Delivery
+![Checkout COD](docs/screenshots/checkout-cod.png)
+
+### Checkout - Demo Payment
+![Checkout demo payment](docs/screenshots/checkout-demo-payment.png)
+
+### My Orders
+![My orders](docs/screenshots/my-orders.png)
+
+### Admin - Order Status
+![Admin orders](docs/screenshots/admin-orders.png)
