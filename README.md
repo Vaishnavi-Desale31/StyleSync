@@ -2,6 +2,9 @@
 
 A fashion e-commerce backend built with **Java 21, Spring Boot and PostgreSQL**, with a simple HTML/JavaScript storefront and admin panel.
 
+**Live Demo:** https://your-render-link.onrender.com
+*The first load can take about a minute because the free server sleeps when idle.*
+
 > **Status:** work in progress. There is no AI feature yet. The project was renamed from *StyleSync-AI* to *StyleSync*, and AI-based style suggestions are a future plan.
 
 ## Features
@@ -15,9 +18,35 @@ A fashion e-commerce backend built with **Java 21, Spring Boot and PostgreSQL**,
 - **Price comparison:** price offers per product from different platforms (demo data).
 - **Money handling:** `BigDecimal` for all amounts, and the server always takes prices from the database, never from the client.
 
+## Screenshots
+
+### Landing Page
+![Landing page](docs/screenshots/front.png)
+
+### Home / Product Listing
+![Home page](docs/screenshots/home.png)
+
+### Product Details
+![Product details](docs/screenshots/product.png)
+
+### Cart
+![Cart](docs/screenshots/cart.png)
+
+### Checkout - Cash on Delivery
+![Checkout COD](docs/screenshots/checkout-cod.png)
+
+### Checkout - Demo Payment
+![Checkout demo payment](docs/screenshots/checkout-demo-payment.png)
+
+### My Orders
+![My orders](docs/screenshots/my-orders.png)
+
+### Admin - Order Status
+![Admin orders](docs/screenshots/admin-orders.png)
+
 ## Tech stack
 
-Java 21, Spring Boot 4, Spring Data JPA / Hibernate, Spring Security, JWT (jjwt), PostgreSQL, Razorpay Java SDK, JUnit 5, Mockito, Maven.
+Java 21, Spring Boot 4, Spring Data JPA / Hibernate, Spring Security, JWT (jjwt), PostgreSQL, Razorpay Java SDK, JUnit 5, Mockito, Maven. Deployed on Render.
 
 ## Run it locally
 
@@ -29,14 +58,14 @@ Java 21, Spring Boot 4, Spring Data JPA / Hibernate, Spring Security, JWT (jjwt)
    ```
 2. Set environment variables. This repo never stores secrets.
 
-   | Variable | Purpose |
-      |---|---|
-   | `DB_PASSWORD` | PostgreSQL password for user `postgres` |
-   | `JWT_SECRET` | Base64 secret used to sign JWTs |
-   | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Razorpay **test** keys (optional) |
-   | `APP_DEMO_PAYMENT_ENABLED` | `true` to enable the demo payment button (local only) |
+| Variable | Purpose |
+|---|---|
+| `DB_PASSWORD` | PostgreSQL password for user `postgres` |
+| `JWT_SECRET` | Base64 secret used to sign JWTs |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Razorpay **test** keys (optional) |
+| `APP_DEMO_PAYMENT_ENABLED` | `true` to enable the demo payment button |
 
-   PowerShell example:
+PowerShell example:
    ```powershell
    $env:DB_PASSWORD = "your-db-password"
    $env:JWT_SECRET  = "your-base64-secret"
@@ -100,30 +129,9 @@ A missing `addressId` returns **400**. An address that does not exist or belongs
 
 - Password reset emails are not sent yet. The reset link is only written to the application log.
 - More tests are needed for account/address management, admin order management and the password reset flow.
-- AI-based style suggestions and cloud deployment are planned.
+- AI-based style suggestions are planned but not built.
 
-## Screenshots
+## Author
 
-### Landing Page
-![Landing page](docs/screenshots/front.png)
-
-### Home / Product Listing
-![Home page](docs/screenshots/home.png)
-
-### Product Details
-![Product details](docs/screenshots/product.png)
-
-### Cart
-![Cart](docs/screenshots/cart.png)
-
-### Checkout - Cash on Delivery
-![Checkout COD](docs/screenshots/checkout-cod.png)
-
-### Checkout - Demo Payment
-![Checkout demo payment](docs/screenshots/checkout-demo-payment.png)
-
-### My Orders
-![My orders](docs/screenshots/my-orders.png)
-
-### Admin - Order Status
-![Admin orders](docs/screenshots/admin-orders.png)
+**Vaishnavi Desale**, Java Backend Developer
+GitHub: [Vaishnavi-Desale31](https://github.com/Vaishnavi-Desale31)
