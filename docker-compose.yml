@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: stylesync_ai
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stylesync_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/stylesync_ai
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      APP_SEED_DEMO_DATA: "false"
+      APP_DEMO_PAYMENT_ENABLED: "true"
+      SPRING_JPA_SHOW_SQL: "false"
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: INFO
+
+volumes:
+  pgdata:
